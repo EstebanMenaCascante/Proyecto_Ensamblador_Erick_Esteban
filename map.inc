@@ -1,0 +1,124 @@
+; MANEJO DE MAPAS - MAP.INC
+
+
+.DATA
+    ; Mapa
+    MAPA_ANCHO DW ?
+    MAPA_ALTO DW ?
+    MAPA_DATOS DB 300 DUP(?)
+    NOMBRE_ARCHIVO DB 'mapa.txt', 0
+    CARACTER_TEMP DB ?
+
+.CODE
+
+; CARGAR MAPA DESDE ARCHIVO
+
+CARGAR_MAPA PROC
+    ; Establecer dimensiones
+    MOV MAPA_ANCHO, 20
+    MOV MAPA_ALTO, 15
+    
+    ; Intentar abrir archivo
+    MOV AH, 3DH
+    MOV AL, 0
+    LEA DX, NOMBRE_ARCHIVO
+    INT 21H
+    JC ERROR_ARCHIVO
+    
+    MOV BX, AX
+    
+    
+    MOV AH, 3FH
+    MOV CX, 5
+    LEA DX, CARACTER_TEMP
+    INT 21H
+    
+    ; Leer datos del mapa
+    MOV SI, 0
+    MOV CX, 450
+    
+LEER_MAPA:
+    PUSH CX
+    MOV AH, 3FH
+    MOV CX, 1
+    LEA DX, CARACTER_TEMP
+    INT 21H
+    POP CX
+    JC FIN_LECTURA
+    
+    MOV AL, CARACTER_TEMP
+    CMP AL, '0'
+    JB NO_VALIDO
+    CMP AL, '3'
+    JA NO_VALIDO
+    
+    SUB AL, '0'
+    MOV MAPA_DATOS[SI], AL
+    INC SI
+    CMP SI, 300
+    JAE FIN_LECTURA
+    
+NO_VALIDO:
+    LOOP LEER_MAPA
+
+FIN_LECTURA:
+    MOV AH, 3EH
+    INT 21H
+    RET
+    
+ERROR_ARCHIVO:
+    CALL CREAR_MAPA_POR_DEFECTO
+    RET
+CARGAR_MAPA ENDP
+
+
+; CREAR MAPA POR DEFECTO
+
+CREAR_MAPA_POR_DEFECTO PROC
+    MOV SI, 0
+    MOV CX, 300
+    
+LLENAR_TIERRA:
+    MOV MAPA_DATOS[SI], 0
+    INC SI
+    LOOP LLENAR_TIERRA
+    
+    ; Bordes de piedra
+    MOV SI, 0
+    MOV CX, 20
+BORDE_SUPERIOR:
+    MOV MAPA_DATOS[SI], 1
+    INC SI
+    LOOP BORDE_SUPERIOR
+    
+    MOV SI, 280
+    MOV CX, 20  
+BORDE_INFERIOR:
+    MOV MAPA_DATOS[SI], 1
+    INC SI
+    LOOP BORDE_INFERIOR
+    
+    MOV SI, 0
+BORDE_IZQUIERDO:
+    MOV MAPA_DATOS[SI], 1
+    ADD SI, 20
+    CMP SI, 300
+    JB BORDE_IZQUIERDO
+    
+    MOV SI, 19
+BORDE_DERECHO:
+    MOV MAPA_DATOS[SI], 1
+    ADD SI, 20
+    CMP SI, 300
+    JB BORDE_DERECHO
+    
+    ; Agregar elementos
+    MOV MAPA_DATOS[22], 2
+    MOV MAPA_DATOS[23], 2
+    MOV MAPA_DATOS[42], 2
+    MOV MAPA_DATOS[43], 2
+    MOV MAPA_DATOS[82], 3
+    MOV MAPA_DATOS[83], 3
+    
+    RET
+CREAR_MAPA_POR_DEFECTO ENDP

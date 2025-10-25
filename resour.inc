@@ -1,0 +1,242 @@
+
+; RECURSOS E INVENTARIO 
+
+.DATA
+    ; Recursos (X, Y, Tipo, Activo) - cada recurso usa 8 bytes
+    NUM_RECURSOS EQU 15
+    RECURSOS DW 15 DUP(0, 0, 0, 1)  ; X, Y, Tipo, Activo
+    
+    ; Inventario
+    INVENTARIO DB 3 DUP(0)
+    OBJETIVO DB 2, 2, 2
+
+.CODE
+
+; CARGAR RECURSOS
+
+CARGAR_RECURSOS PROC
+    ; Minerales (Tipo 1)
+    MOV RECURSOS[0], 80    ; X
+    MOV RECURSOS[2], 80    ; Y
+    MOV RECURSOS[4], 1     ; Tipo
+    MOV RECURSOS[6], 1     ; Activo
+    
+    MOV RECURSOS[8], 120
+    MOV RECURSOS[10], 60
+    MOV RECURSOS[12], 1
+    MOV RECURSOS[14], 1
+    
+    MOV RECURSOS[16], 200
+    MOV RECURSOS[18], 100
+    MOV RECURSOS[20], 1
+    MOV RECURSOS[22], 1
+    
+    ; Madera (Tipo 2)
+    MOV RECURSOS[24], 100
+    MOV RECURSOS[26], 150
+    MOV RECURSOS[28], 2
+    MOV RECURSOS[30], 1
+    
+    MOV RECURSOS[32], 180
+    MOV RECURSOS[34], 80
+    MOV RECURSOS[36], 2
+    MOV RECURSOS[38], 1
+    
+    MOV RECURSOS[40], 240
+    MOV RECURSOS[42], 180
+    MOV RECURSOS[44], 2
+    MOV RECURSOS[46], 1
+    
+    ; Fruta (Tipo 3)
+    MOV RECURSOS[48], 60
+    MOV RECURSOS[50], 140
+    MOV RECURSOS[52], 3
+    MOV RECURSOS[54], 1
+    
+    MOV RECURSOS[56], 140
+    MOV RECURSOS[58], 200
+    MOV RECURSOS[60], 3
+    MOV RECURSOS[62], 1
+    
+    MOV RECURSOS[64], 220
+    MOV RECURSOS[66], 120
+    MOV RECURSOS[68], 3
+    MOV RECURSOS[70], 1
+    
+    RET
+CARGAR_RECURSOS ENDP
+
+
+; DIBUJAR RECURSOS 
+
+DIBUJAR_RECURSOS PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+    
+    MOV CX, NUM_RECURSOS
+    MOV SI, 0
+    
+DIBUJAR_RECURSO_LOOP:
+    ; Verificar si está activo
+    MOV AX, RECURSOS[SI+6]
+    CMP AX, 1
+    JNE SIGUIENTE_RECURSO
+    
+    ; Usar posición absoluta 
+    MOV AX, RECURSOS[SI]   ; X
+    MOV BX, RECURSOS[SI+2] ; Y
+    
+    ; Verificar si está dentro de la pantalla
+    CMP AX, 0
+    JL SIGUIENTE_RECURSO
+    CMP AX, 320
+    JGE SIGUIENTE_RECURSO
+    CMP BX, 0
+    JL SIGUIENTE_RECURSO
+    CMP BX, 240
+    JGE SIGUIENTE_RECURSO
+    
+    ; Dibujar según tipo
+    MOV DX, RECURSOS[SI+4]
+    CMP DX, 1
+    JE DIBUJAR_MINERAL
+    CMP DX, 2
+    JE DIBUJAR_MADERA
+    CMP DX, 3
+    JE DIBUJAR_FRUTA
+    JMP SIGUIENTE_RECURSO
+
+DIBUJAR_MINERAL:
+    MOV AL, COLOR_AMARILLO
+    JMP DIBUJAR_RECURSO_CUADRADO
+
+DIBUJAR_MADERA:
+    MOV AL, COLOR_MARRON
+    JMP DIBUJAR_RECURSO_CUADRADO
+
+DIBUJAR_FRUTA:
+    MOV AL, COLOR_ROJO
+
+DIBUJAR_RECURSO_CUADRADO:
+    MOV CX, AX
+    MOV DX, BX
+    MOV AH, 0CH
+    MOV BH, 0
+    MOV DI, 8
+    
+FILA_RECURSO:
+    PUSH CX
+    MOV BP, 8
+    
+COLUMNA_RECURSO:
+    INT 10H
+    INC CX
+    DEC BP
+    JNZ COLUMNA_RECURSO
+    
+    POP CX
+    INC DX
+    DEC DI
+    JNZ FILA_RECURSO
+
+SIGUIENTE_RECURSO:
+    ADD SI, 8
+    DEC CX
+    JNZ DIBUJAR_RECURSO_LOOP
+    
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_RECURSOS ENDP
+
+
+; VERIFICAR RECOLECCION
+
+VERIFICAR_RECOLECCION PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV CX, NUM_RECURSOS
+    MOV SI, 0
+    
+VERIFICAR_RECURSO:
+    ; Verificar si está activo
+    MOV AX, RECURSOS[SI+6]
+    CMP AX, 1
+    JNE SIGUIENTE_RECOLECCION
+    
+    ; Calcular distancia al jugador
+    MOV AX, JUGADOR_X
+    MOV BX, JUGADOR_Y
+    ADD AX, 8  ; Centro del jugador
+    ADD BX, 8
+    
+    SUB AX, RECURSOS[SI]   ; X
+    SUB BX, RECURSOS[SI+2] ; Y
+    
+    ; Usar valor absoluto aproximado
+    CMP AX, 0
+    JGE POSITIVO_X
+    NEG AX
+POSITIVO_X:
+    CMP BX, 0
+    JGE POSITIVO_Y
+    NEG BX
+POSITIVO_Y:
+    
+    ; Verificar si está cerca (16 píxeles)
+    CMP AX, 16
+    JG SIGUIENTE_RECOLECCION
+    CMP BX, 16
+    JG SIGUIENTE_RECOLECCION
+    
+    ; Recolectar recurso
+    MOV RECURSOS[SI+6], 0
+    MOV BX, RECURSOS[SI+4]
+    DEC BX
+    INC INVENTARIO[BX]
+    
+SIGUIENTE_RECOLECCION:
+    ADD SI, 8
+    LOOP VERIFICAR_RECURSO
+    
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+VERIFICAR_RECOLECCION ENDP
+
+
+; VERIFICAR VICTORIA
+
+VERIFICAR_VICTORIA PROC
+    MOV SI, 0
+    MOV CX, 3
+    
+VERIFICAR_OBJETIVO:
+    MOV AL, INVENTARIO[SI]
+    CMP AL, OBJETIVO[SI]
+    JB NO_VICTORIA
+    INC SI
+    LOOP VERIFICAR_OBJETIVO
+    
+    MOV AL, 1  ; Victoria
+    RET
+    
+NO_VICTORIA:
+    MOV AL, 0  ; No victoria
+    RET
+VERIFICAR_VICTORIA ENDP
