@@ -4,6 +4,8 @@
 .DATA
     JUGADOR_X DW 160
     JUGADOR_Y DW 120
+    JUGADOR_X_ANTERIOR DW 160
+    JUGADOR_Y_ANTERIOR DW 120
     DIRECCION DB 0
 
 .CODE
@@ -13,6 +15,8 @@
 INICIALIZAR_JUGADOR PROC
     MOV JUGADOR_X, 160
     MOV JUGADOR_Y, 120
+    MOV JUGADOR_X_ANTERIOR, 160
+    MOV JUGADOR_Y_ANTERIOR, 120
     MOV DIRECCION, 0
     RET
 INICIALIZAR_JUGADOR ENDP
@@ -28,29 +32,44 @@ DIBUJAR_JUGADOR PROC
     PUSH SI
     PUSH DI
     
-    MOV CX, JUGADOR_X
-    MOV DX, JUGADOR_Y
-    MOV SI, 16       ; Ancho
-    MOV DI, 16       ; Alto
+    ; Guardar posici贸n del jugador
+    MOV AX, JUGADOR_X
+    MOV BX, JUGADOR_Y
+    MOV TILE_X, AX
+    MOV TILE_Y, BX
+    MOV TILE_COLOR, COLOR_ROJO
     
-DIBUJAR_FILA_JUGADOR:
-    PUSH CX
-    MOV BX, SI
+    MOV DI, 0       ; Fila (0-15)
     
-DIBUJAR_COLUMNA_JUGADOR:
-    MOV AH, 0CH
-    MOV AL, COLOR_ROJO
-    MOV BH, 0
-    INT 10H
-    INC CX
-    DEC BX
-    JNZ DIBUJAR_COLUMNA_JUGADOR
+FILA_JUGADOR:
+    CMP DI, 16
+    JAE FIN_JUGADOR
     
-    POP CX
-    INC DX
-    DEC DI
-    JNZ DIBUJAR_FILA_JUGADOR
+    MOV SI, 0       ; Columna (0-15)
     
+COLUMNA_JUGADOR:
+    CMP SI, 16
+    JAE FIN_FILA_JUGADOR
+    
+    ; Calcular posici贸n del pixel
+    MOV DX, TILE_Y
+    ADD DX, DI       ; Y = Y_jugador + fila
+    
+    MOV CX, TILE_X
+    ADD CX, SI       ; X = X_jugador + columna
+    
+    ; Dibujar pixel usando funci贸n r谩pida
+    MOV AL, TILE_COLOR
+    CALL ESCRIBIR_PIXEL
+    
+    INC SI
+    JMP COLUMNA_JUGADOR
+    
+FIN_FILA_JUGADOR:
+    INC DI
+    JMP FILA_JUGADOR
+    
+FIN_JUGADOR:
     POP DI
     POP SI
     POP DX
@@ -59,6 +78,64 @@ DIBUJAR_COLUMNA_JUGADOR:
     POP AX
     RET
 DIBUJAR_JUGADOR ENDP
+
+
+; BORRAR JUGADOR ANTERIOR (pintar del color del piso)
+
+BORRAR_JUGADOR_ANTERIOR PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+    
+    ; Usar la posici贸n anterior
+    MOV AX, JUGADOR_X_ANTERIOR
+    MOV BX, JUGADOR_Y_ANTERIOR
+    MOV TILE_X, AX
+    MOV TILE_Y, BX
+    MOV TILE_COLOR, COLOR_MARRON   ; Color del piso (tierra)
+    
+    MOV DI, 0       ; Fila (0-15)
+    
+FILA_BORRAR:
+    CMP DI, 16
+    JAE FIN_BORRAR
+    
+    MOV SI, 0       ; Columna (0-15)
+    
+COLUMNA_BORRAR:
+    CMP SI, 16
+    JAE FIN_FILA_BORRAR
+    
+    ; Calcular posici贸n del pixel
+    MOV DX, TILE_Y
+    ADD DX, DI       ; Y = Y_anterior + fila
+    
+    MOV CX, TILE_X
+    ADD CX, SI       ; X = X_anterior + columna
+    
+    ; Dibujar pixel del color del piso
+    MOV AL, TILE_COLOR
+    CALL ESCRIBIR_PIXEL
+    
+    INC SI
+    JMP COLUMNA_BORRAR
+    
+FIN_FILA_BORRAR:
+    INC DI
+    JMP FILA_BORRAR
+    
+FIN_BORRAR:
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+BORRAR_JUGADOR_ANTERIOR ENDP
 
 
 ; ACTUALIZAR VIEWPORT 
@@ -72,7 +149,7 @@ ACTUALIZAR_VIEWPORT ENDP
 ; VERIFICAR COLISIONES
 
 VERIFICAR_COLISION PROC
-    ; Convertir posici髇 a coordenadas de mapa
+    ; Convertir posici锟絥 a coordenadas de mapa
     MOV AX, JUGADOR_X
     MOV BX, JUGADOR_Y
     ADD AX, 8

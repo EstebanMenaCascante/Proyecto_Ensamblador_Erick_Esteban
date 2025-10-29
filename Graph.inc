@@ -10,6 +10,16 @@
     COLOR_GRIS EQU 8
     COLOR_AMARILLO EQU 14
     COLOR_BLANCO EQU 15
+    
+    ; Variables temporales para dibujar tiles
+    TILE_X DW 0
+    TILE_Y DW 0
+    TILE_COLOR DB 0
+    FILA_ACTUAL DW 0
+    COLUMNA_ACTUAL DW 0
+    
+    ; Segmento de memoria de video EGA 640x350x16
+    VIDEO_SEG EQU 0A000H
 
 .CODE
 
@@ -20,6 +30,21 @@ INICIAR_MODO_GRAFICO PROC
     INT 10H
     RET
 INICIAR_MODO_GRAFICO ENDP
+
+
+; ESCRIBIR PIXEL RAPIDO
+; CX = X, DX = Y, AL = Color
+
+ESCRIBIR_PIXEL PROC
+    PUSH AX
+    PUSH BX
+    MOV AH, 0CH      ; Funci贸n escribir pixel
+    XOR BH, BH       ; P谩gina 0
+    INT 10H
+    POP BX
+    POP AX
+    RET
+ESCRIBIR_PIXEL ENDP
 
 
 ; LIMPIAR PANTALLA
@@ -55,91 +80,44 @@ DIBUJAR_MAPA_COMPLETO PROC
     PUSH DX
     PUSH SI
     PUSH DI
+    PUSH BP
     
-    MOV SI, 0        ; 蚽dice del mapa
-    MOV DX, 0        ; Y inicial
+    MOV SI, 0           ; 脥ndice del mapa
+    MOV FILA_ACTUAL, 0  ; Fila 0
     
 PROXIMA_FILA_MAPA:
-    CMP DX, 240      ; 15 filas * 16px = 240px
-    JAE FIN_MAPA
+    MOV AX, FILA_ACTUAL
+    CMP AX, 15          ; 15 filas
+    JAE FIN_MAPA_COMPLETO
     
-    MOV CX, 0        ; X inicial
-    MOV DI, 0        ; Contador columnas
+    MOV COLUMNA_ACTUAL, 0  ; Columna 0
     
 PROXIMA_COLUMNA_MAPA:
-    CMP DI, 20     
-    JAE SIGUIENTE_FILA
+    MOV AX, COLUMNA_ACTUAL
+    CMP AX, 20          ; 20 columnas
+    JAE SIGUIENTE_FILA_MAPA
     
-    ; Obtener tile
-    MOV AL, MAPA_DATOS[SI]
+    ; Obtener tile del mapa
+    MOV BL, MAPA_DATOS[SI]
     
-    ; Elegir color
-    CMP AL, 0
-    JE DIBUJAR_TIERRA
-    CMP AL, 1
-    JE DIBUJAR_PIEDRA
-    CMP AL, 2
-    JE DIBUJAR_AGUA
-    CMP AL, 3
-    JE DIBUJAR_HIERBA
-    JMP DIBUJAR_TILE
-
-DIBUJAR_TIERRA:
-    MOV AL, COLOR_MARRON
-    JMP DIBUJAR_TILE
-
-DIBUJAR_PIEDRA:
-    MOV AL, COLOR_GRIS
-    JMP DIBUJAR_TILE
-
-DIBUJAR_AGUA:
-    MOV AL, COLOR_AZUL
-    JMP DIBUJAR_TILE
-
-DIBUJAR_HIERBA:
-    MOV AL, COLOR_VERDE
-
-DIBUJAR_TILE:
-    ; Dibujar tile 16x16
-    PUSH CX
-    PUSH DX
-    PUSH SI
-    MOV SI, CX       ; Guardar X
-    MOV BX, DX       ; Guardar Y
-    MOV CX, 16       ; Alto
+    ; Obtener fila y columna
+    MOV BP, FILA_ACTUAL
+    MOV DI, COLUMNA_ACTUAL
     
-DIBUJAR_FILA_TILE:
-    PUSH SI
-    MOV DX, BX
-    MOV AH, 0CH
-    MOV BH, 0
-    MOV DI, 16       ; Ancho
+    ; Calcular color y dibujar
+    CALL OBTENER_COLOR_Y_DIBUJAR_TILE
     
-DIBUJAR_PIXEL_TILE:
-    INT 10H
+    ; Siguiente columna
     INC SI
-    DEC DI
-    JNZ DIBUJAR_PIXEL_TILE
-    
-    POP SI
-    INC BX
-    LOOP DIBUJAR_FILA_TILE
-    
-    POP SI
-    POP DX
-    POP CX
-
-    ; Siguiente tile
-    ADD CX, 16
-    INC SI
-    INC DI
+    INC COLUMNA_ACTUAL
     JMP PROXIMA_COLUMNA_MAPA
 
-SIGUIENTE_FILA:
-    ADD DX, 16
+SIGUIENTE_FILA_MAPA:
+    INC FILA_ACTUAL
     JMP PROXIMA_FILA_MAPA
 
-FIN_MAPA:
+FIN_MAPA_COMPLETO:
+    POP BP
     POP DI
     POP SI
     POP DX
@@ -149,6 +127,107 @@ FIN_MAPA:
     RET
 DIBUJAR_MAPA_COMPLETO ENDP
 
+
+; OBTENER COLOR Y DIBUJAR TILE
+; BL = tipo de tile, DI = columna, BP = fila
+
+OBTENER_COLOR_Y_DIBUJAR_TILE PROC
+    PUSH AX
+    PUSH BX
+    
+    ; Elegir color seg煤n tipo de tile
+    MOV AL, COLOR_MARRON    ; Por defecto tierra (0)
+    
+    CMP BL, 1
+    JNE VERIFICAR_AGUA
+    MOV AL, COLOR_GRIS      ; Piedra
+    JMP SHORT TIENE_COLOR
+    
+VERIFICAR_AGUA:
+    CMP BL, 2
+    JNE VERIFICAR_HIERBA
+    MOV AL, COLOR_AZUL      ; Agua
+    JMP SHORT TIENE_COLOR
+    
+VERIFICAR_HIERBA:
+    CMP BL, 3
+    JNE TIENE_COLOR
+    MOV AL, COLOR_VERDE     ; Hierba
+    
+TIENE_COLOR:
+    ; Guardar color en memoria
+    MOV TILE_COLOR, AL
+    
+    ; Calcular posici贸n X e Y del tile
+    MOV AX, DI
+    MOV BX, 16
+    MUL BX
+    MOV TILE_X, AX          ; X = columna * 16
+    
+    MOV AX, BP
+    MOV BX, 16
+    MUL BX
+    MOV TILE_Y, AX          ; Y = fila * 16
+    
+    ; Dibujar el tile 16x16
+    CALL DIBUJAR_TILE_16X16
+    
+    POP BX
+    POP AX
+    RET
+OBTENER_COLOR_Y_DIBUJAR_TILE ENDP
+
+
+; DIBUJAR UN TILE 16X16
+; TILE_X, TILE_Y = posici贸n superior izquierda
+; TILE_COLOR = color a usar
+
+DIBUJAR_TILE_16X16 PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH DI
+    
+    MOV DI, 0        ; Fila del tile (0-15)
+    
+FILA_TILE:
+    CMP DI, 16
+    JAE FIN_DIBUJAR_TILE
+    
+    MOV BX, 0        ; Columna del tile (0-15)
+    
+COLUMNA_TILE:
+    CMP BX, 16
+    JAE FIN_FILA_TILE
+    
+    ; Calcular posici贸n del pixel
+    MOV DX, TILE_Y
+    ADD DX, DI       ; Y = Y_tile + fila
+    
+    MOV CX, TILE_X
+    ADD CX, BX       ; X = X_tile + columna
+    
+    ; Dibujar pixel usando funci贸n r谩pida
+    MOV AL, TILE_COLOR
+    CALL ESCRIBIR_PIXEL
+    
+    INC BX
+    JMP COLUMNA_TILE
+    
+FIN_FILA_TILE:
+    INC DI
+    JMP FILA_TILE
+    
+FIN_DIBUJAR_TILE:
+    POP DI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_TILE_16X16 ENDP
+
 ; DIBUJAR HUD
 
 DIBUJAR_HUD PROC
@@ -157,19 +236,18 @@ DIBUJAR_HUD PROC
     PUSH CX
     PUSH DX
     
-  
     MOV CX, 0
     MOV DX, 240      
     MOV AL, COLOR_BLANCO
-    MOV AH, 0CH
-    MOV BX, 320
     
 DIBUJAR_LINEA_HUD:
-    INT 10H
+    CMP CX, 320
+    JAE FIN_HUD
+    CALL ESCRIBIR_PIXEL
     INC CX
-    DEC BX
-    JNZ DIBUJAR_LINEA_HUD
+    JMP DIBUJAR_LINEA_HUD
     
+FIN_HUD:
     POP DX
     POP CX
     POP BX

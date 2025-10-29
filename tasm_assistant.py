@@ -78,9 +78,44 @@ class AssemblerAssistant:
             print(f"Error copiando archivos de TASM: {e}")
             return False
     
-    def create_dosbox_config(self, asm_file):
+    def create_dosbox_config(self, asm_file, debug_mode=False):
         """Crea un archivo de configuración temporal para DOSBox"""
-        config_content = f"""
+        if debug_mode:
+            # Configuración para modo depuración
+            config_content = f"""
+[autoexec]
+# Montar directorio de trabajo como unidad C:
+mount c {self.work_dir}
+c:
+        
+# Ensamblar y enlazar con información de depuración
+echo Ensamblando {asm_file} con información de depuración...
+tasm /zi {asm_file}
+        
+echo Enlazando con información de depuración...
+tlink /v {asm_file.replace('.asm', '.obj')}
+
+echo.
+echo Iniciando Turbo Debugger...
+echo.
+echo Comandos básicos de Turbo Debugger:
+echo - F7: Step into
+echo - F8: Step over  
+echo - F9: Run
+echo - F10: Menu
+echo - Alt+F5: User screen
+echo - Ctrl+F2: Reset program
+echo - Alt+X: Salir
+echo.
+echo Presiona una tecla para iniciar Turbo Debugger...
+pause
+td {asm_file.replace('.asm', '.exe')}
+        
+exit
+"""
+        else:
+            # Configuración normal
+            config_content = f"""
 [autoexec]
 # Montar directorio de trabajo como unidad C:
 mount c {self.work_dir}
@@ -107,6 +142,93 @@ exit
         with open(config_path, 'w', encoding='utf-8') as f:
             f.write(config_content)
         return config_path
+
+    def create_batch_file(self, asm_file, debug_mode=False):
+        """Crea un archivo batch para mayor control"""
+        if debug_mode:
+            batch_content = f"""@echo off
+echo ===============================
+echo    MODO DEPURACION - TURBO DEBUGGER
+echo ===============================
+echo.
+echo Ensamblando con información de depuración...
+tasm /zi {asm_file}
+if errorlevel 1 goto error
+
+echo Enlazando con información de depuración...
+tlink /v {asm_file.replace('.asm', '.obj')}
+if errorlevel 1 goto error
+
+echo.
+echo Iniciando Turbo Debugger...
+echo.
+echo Comandos útiles:
+echo F7  - Step into
+echo F8  - Step over
+echo F9  - Run
+echo F10 - Menu
+echo Alt+F5 - Ver pantalla de usuario
+echo Ctrl+F2 - Reiniciar programa
+echo Alt+X - Salir
+echo.
+pause
+td {asm_file.replace('.asm', '.exe')}
+goto end
+
+:error
+echo ERROR en el proceso!
+pause
+exit 1
+
+:end
+echo Depuración finalizada.
+"""
+        else:
+            batch_content = f"""@echo off
+echo ===============================
+echo    MODO EJECUCION NORMAL
+echo ===============================
+echo.
+echo Ensamblando...
+tasm /zi {asm_file}
+if errorlevel 1 goto error
+
+echo Enlazando...
+tlink /v {asm_file.replace('.asm', '.obj')}
+if errorlevel 1 goto error
+
+echo Ejecutando programa...
+echo.
+{asm_file.replace('.asm', '.exe')}
+echo.
+echo Programa ejecutado. Presiona una tecla...
+pause
+goto end
+
+:error
+echo ERROR en el proceso!
+pause
+exit 1
+
+:end
+"""
+        batch_path = os.path.join(self.work_dir, "run.bat")
+        with open(batch_path, 'w', encoding='utf-8') as f:
+            f.write(batch_content)
+        return batch_path
+
+    def create_dosbox_config_with_batch(self, batch_file):
+        """Configuración simple que ejecuta el batch file"""
+        config_content = f"""
+[autoexec]
+mount c {self.work_dir}
+c:
+{batch_file}
+"""
+        config_path = os.path.join(self.work_dir, "dosbox.conf")
+        with open(config_path, 'w', encoding='utf-8') as f:
+            f.write(config_content)
+        return config_path
     
     def copy_asm_files_to_workdir(self, asm_file):
         """Copia los archivos ASM y relacionados al directorio de trabajo"""
@@ -115,16 +237,26 @@ exit
         shutil.copy2(asm_file, work_asm)
         
         # Copiar archivos incluidos (.inc) desde el mismo directorio
-        source_dir = asm_path.parent
+        source_dir = asm_path.parent    
+
+        # tipos de archivos a copiar 
+        extensiones_utiles = [
+            '.inc', '.h', '.mac', # archivos de inclusion
+            '.txt', '.dat', '.bin', '.cfg', '.lst' # archivos de datos
+        ]
         for file in source_dir.glob("*"):
-            if file.suffix.lower() in ['.inc', '.h', '.mac']:
-                shutil.copy2(file, self.work_dir)
+            if file.is_file() and file.suffix.lower() in extensiones_utiles:
+                if file.name != asm_path.name:  # evitar duplicar el .asm
+                    shutil.copy2(file, self.work_dir)
         
         print(f"Archivos de programa copiados a: {self.work_dir}")
         return work_asm
     
-    def assemble_and_run(self, asm_file, debug=False):
-        """Ensambla, enlaza y ejecuta el código"""
+    def assemble_and_run(self, asm_file, debug=False, debug_mode=False):
+        """Ensambla, enlaza y ejecuta el código
+        debug: muestra salida de consola
+        debug_mode: usa Turbo Debugger en lugar de ejecutar directamente
+        """
         if not self.dosbox_path:
             print("Error: No se encontró DOSBox")
             return False
@@ -142,8 +274,9 @@ exit
             # Copiar archivos del programa
             work_asm = self.copy_asm_files_to_workdir(asm_file)
             
-            # Crear configuración de DOSBox
-            config_path = self.create_dosbox_config(os.path.basename(work_asm))
+            # Crear batch file y configuración
+            batch_file = self.create_batch_file(os.path.basename(work_asm), debug_mode)
+            config_path = self.create_dosbox_config_with_batch(os.path.basename(batch_file))
             
             # Comando para ejecutar DOSBox
             cmd = [self.dosbox_path, "-conf", config_path]
@@ -152,10 +285,25 @@ exit
                 cmd.append("-noconsole")
             
             print("=" * 50)
-            print(f"Iniciando proceso de ensamblado...")
+            if debug_mode:
+                print("🔍 INICIANDO MODO DEPURACIÓN")
+                print("Se abrirá Turbo Debugger automáticamente")
+            else:
+                print("🚀 INICIANDO MODO EJECUCIÓN NORMAL")
             print(f"Archivo: {os.path.basename(asm_file)}")
             print(f"Directorio temporal: {self.work_dir}")
             print("=" * 50)
+            
+            if debug_mode:
+                print("\n📝 COMANDOS BÁSICOS DE TURBO DEBUGGER:")
+                print("F7  - Step into (entrar en procedimiento)")
+                print("F8  - Step over (ejecutar línea)")
+                print("F9  - Run (ejecutar hasta breakpoint)")
+                print("F10 - Menu principal")
+                print("Alt+F5  - Ver pantalla del programa")
+                print("Ctrl+F2 - Reiniciar programa")
+                print("Alt+X   - Salir del debugger")
+                print("\nPresiona Ctrl+C en esta ventana para cancelar...")
             
             # Ejecutar DOSBox
             result = subprocess.run(cmd, capture_output=not debug, text=True, encoding='latin-1')
@@ -166,11 +314,18 @@ exit
                 if result.stderr:
                     print("Errores:", result.stderr)
             
-            if result.returncode == 0:
-                print("✓ Proceso completado exitosamente")
+            # Verificar si se generaron los archivos
+            obj_file = os.path.join(self.work_dir, asm_file.replace('.asm', '.obj'))
+            exe_file = os.path.join(self.work_dir, asm_file.replace('.asm', '.exe'))
+            
+            if os.path.exists(exe_file):
+                print("✓ Archivo .EXE generado exitosamente!")
                 return True
+            elif os.path.exists(obj_file):
+                print("✓ Archivo .OBJ generado, pero falló el enlazado")
+                return False
             else:
-                print("✗ Error en el proceso (código de retorno:", result.returncode, ")")
+                print("✗ Fallo en el ensamblado")
                 return False
                 
         except Exception as e:
@@ -185,14 +340,26 @@ exit
         except Exception as e:
             print(f"Error limpiando directorio: {e}")
 
+def print_help():
+    print("Asistente para ensamblador 8086/8088 con DOSBox y TASM")
+    print("Uso: python tasm_assistant.py <archivo.asm> [opciones]")
+    print("\nOpciones:")
+    print("  --debug          : Mostrar salida detallada de DOSBox")
+    print("  --debug-mode     : Ejecutar en Turbo Debugger (TD)")
+    print("  --help           : Mostrar esta ayuda")
+    print("\nEjemplos:")
+    print("  python tasm_assistant.py programa.asm          # Ejecución normal")
+    print("  python tasm_assistant.py programa.asm --debug  # Con salida detallada")
+    print("  python tasm_assistant.py programa.asm --debug-mode  # Con Turbo Debugger")
+
 def main():
-    if len(sys.argv) < 2:
-        print("Uso: python asm_assistant.py <archivo.asm> [--debug]")
-        print("Ejemplo: python asm_assistant.py programa.asm --debug")
+    if len(sys.argv) < 2 or "--help" in sys.argv:
+        print_help()
         sys.exit(1)
     
     asm_file = sys.argv[1]
-    debug_mode = "--debug" in sys.argv
+    debug = "--debug" in sys.argv
+    debug_mode = "--debug-mode" in sys.argv
     
     if not os.path.exists(asm_file):
         print(f"Error: El archivo {asm_file} no existe")
@@ -201,11 +368,16 @@ def main():
     assistant = AssemblerAssistant()
     
     try:
-        success = assistant.assemble_and_run(asm_file, debug_mode)
+        success = assistant.assemble_and_run(asm_file, debug, debug_mode)
         if success:
-            print("🎉 Proceso completado con éxito!")
+            if debug_mode:
+                print("🔍 Sesión de depuración finalizada")
+            else:
+                print("🎉 Proceso completado con éxito!")
         else:
             print("❌ Hubo errores durante el proceso")
+    except KeyboardInterrupt:
+        print("\n⏹️  Proceso interrumpido por el usuario")
     finally:
         assistant.clean_up()
 

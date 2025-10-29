@@ -76,78 +76,48 @@ DIBUJAR_RECURSOS PROC
     PUSH DX
     PUSH SI
     PUSH DI
+    PUSH BP
     
-    MOV CX, NUM_RECURSOS
-    MOV SI, 0
+    MOV BP, NUM_RECURSOS  ; Contador de recursos
+    MOV SI, 0             ; √çndice en el array
     
 DIBUJAR_RECURSO_LOOP:
-    ; Verificar si est· activo
+    CMP BP, 0
+    JE SALIR_DIBUJAR_RECURSOS
+    
+    ; Verificar si est√° activo
     MOV AX, RECURSOS[SI+6]
     CMP AX, 1
     JNE SIGUIENTE_RECURSO
     
-    ; Usar posiciÛn absoluta 
-    MOV AX, RECURSOS[SI]   ; X
-    MOV BX, RECURSOS[SI+2] ; Y
+    ; Obtener posici√≥n y tipo
+    MOV BX, RECURSOS[SI]   ; X en BX
+    MOV DX, RECURSOS[SI+2] ; Y en DX
+    MOV DI, RECURSOS[SI+4] ; Tipo en DI
     
-    ; Verificar si est· dentro de la pantalla
-    CMP AX, 0
-    JL SIGUIENTE_RECURSO
-    CMP AX, 320
-    JGE SIGUIENTE_RECURSO
+    ; Verificar si est√° dentro de la pantalla
     CMP BX, 0
     JL SIGUIENTE_RECURSO
-    CMP BX, 240
-    JGE SIGUIENTE_RECURSO
+    CMP BX, 320
+    JAE SIGUIENTE_RECURSO
+    CMP DX, 0
+    JL SIGUIENTE_RECURSO
+    CMP DX, 240
+    JAE SIGUIENTE_RECURSO
     
-    ; Dibujar seg˙n tipo
-    MOV DX, RECURSOS[SI+4]
-    CMP DX, 1
-    JE DIBUJAR_MINERAL
-    CMP DX, 2
-    JE DIBUJAR_MADERA
-    CMP DX, 3
-    JE DIBUJAR_FRUTA
-    JMP SIGUIENTE_RECURSO
-
-DIBUJAR_MINERAL:
-    MOV AL, COLOR_AMARILLO
-    JMP DIBUJAR_RECURSO_CUADRADO
-
-DIBUJAR_MADERA:
-    MOV AL, COLOR_MARRON
-    JMP DIBUJAR_RECURSO_CUADRADO
-
-DIBUJAR_FRUTA:
-    MOV AL, COLOR_ROJO
-
-DIBUJAR_RECURSO_CUADRADO:
-    MOV CX, AX
-    MOV DX, BX
-    MOV AH, 0CH
-    MOV BH, 0
-    MOV DI, 8
-    
-FILA_RECURSO:
-    PUSH CX
-    MOV BP, 8
-    
-COLUMNA_RECURSO:
-    INT 10H
-    INC CX
-    DEC BP
-    JNZ COLUMNA_RECURSO
-    
-    POP CX
-    INC DX
-    DEC DI
-    JNZ FILA_RECURSO
+    ; Dibujar recurso con su color
+    CALL DIBUJAR_UN_RECURSO
 
 SIGUIENTE_RECURSO:
-    ADD SI, 8
-    DEC CX
-    JNZ DIBUJAR_RECURSO_LOOP
-    
+    ADD SI, 8        ; Siguiente recurso (4 words = 8 bytes)
+    DEC BP
+    JMP DIBUJAR_RECURSO_LOOP
+
+SALIR_DIBUJAR_RECURSOS:
+    JMP FIN_DIBUJAR_RECURSOS
+
+FIN_DIBUJAR_RECURSOS:
+    POP BP
     POP DI
     POP SI
     POP DX
@@ -156,6 +126,77 @@ SIGUIENTE_RECURSO:
     POP AX
     RET
 DIBUJAR_RECURSOS ENDP
+
+
+; DIBUJAR UN RECURSO
+; BX = X, DX = Y, DI = tipo
+
+DIBUJAR_UN_RECURSO PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+    
+    ; Elegir color seg√∫n tipo
+    MOV AL, COLOR_AMARILLO  ; Por defecto mineral
+    
+    CMP DI, 2
+    JNE NO_ES_MADERA
+    MOV AL, COLOR_MARRON    ; Madera
+    JMP SHORT TIENE_COLOR_REC
+    
+NO_ES_MADERA:
+    CMP DI, 3
+    JNE TIENE_COLOR_REC
+    MOV AL, COLOR_ROJO      ; Fruta
+
+TIENE_COLOR_REC:
+    ; Guardar datos del recurso
+    MOV TILE_COLOR, AL
+    MOV TILE_X, BX
+    MOV TILE_Y, DX
+    
+    MOV DI, 0  ; Fila (0-7)
+    
+FILA_REC:
+    CMP DI, 8
+    JAE FIN_REC
+    
+    MOV SI, 0  ; Columna (0-7)
+    
+COLUMNA_REC:
+    CMP SI, 8
+    JAE FIN_FILA_REC
+    
+    ; Calcular posici√≥n del pixel
+    MOV DX, TILE_Y
+    ADD DX, DI       ; Y = Y_recurso + fila
+    
+    MOV CX, TILE_X
+    ADD CX, SI       ; X = X_recurso + columna
+    
+    ; Dibujar pixel usando funci√≥n r√°pida
+    MOV AL, TILE_COLOR
+    CALL ESCRIBIR_PIXEL
+    
+    INC SI
+    JMP COLUMNA_REC
+    
+FIN_FILA_REC:
+    INC DI
+    JMP FILA_REC
+    
+FIN_REC:
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_UN_RECURSO ENDP
 
 
 ; VERIFICAR RECOLECCION
@@ -171,7 +212,7 @@ VERIFICAR_RECOLECCION PROC
     MOV SI, 0
     
 VERIFICAR_RECURSO:
-    ; Verificar si est· activo
+    ; Verificar si estÔøΩ activo
     MOV AX, RECURSOS[SI+6]
     CMP AX, 1
     JNE SIGUIENTE_RECOLECCION
@@ -195,7 +236,7 @@ POSITIVO_X:
     NEG BX
 POSITIVO_Y:
     
-    ; Verificar si est· cerca (16 pÌxeles)
+    ; Verificar si estÔøΩ cerca (16 pÔøΩxeles)
     CMP AX, 16
     JG SIGUIENTE_RECOLECCION
     CMP BX, 16

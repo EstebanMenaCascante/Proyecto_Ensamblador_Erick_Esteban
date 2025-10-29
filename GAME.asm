@@ -58,15 +58,15 @@ MAIN ENDP
 
 BUCLE_PRINCIPAL PROC
 BUCLE_JUEGO:
-    ; Leer teclado
+    ; Leer teclado (ya no redibuja automáticamente)
     CALL LEER_TECLADO
     
-    ;  redibujar si hubo movimiento
-    CALL ACTUALIZAR_JUEGO
+    ; Verificar recolección
+    CALL VERIFICAR_RECOLECCION
     
-    ; Control de velocidad
-    MOV CX, 2
-    MOV DX, 5000
+    ; Control de velocidad (reducido)
+    MOV CX, 0
+    MOV DX, 1000
     MOV AH, 86H
     INT 15H
     

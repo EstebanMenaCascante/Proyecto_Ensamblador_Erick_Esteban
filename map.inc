@@ -8,6 +8,10 @@
     MAPA_DATOS DB 300 DUP(?)
     NOMBRE_ARCHIVO DB 'mapa.txt', 0
     CARACTER_TEMP DB ?
+    
+    ; Viewport (ventana visible del mapa)
+    VIEWPORT_X DW 0
+    VIEWPORT_Y DW 0
 
 .CODE
 
