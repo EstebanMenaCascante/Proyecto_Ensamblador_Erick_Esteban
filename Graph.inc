@@ -87,14 +87,14 @@ DIBUJAR_MAPA_COMPLETO PROC
     
 PROXIMA_FILA_MAPA:
     MOV AX, FILA_ACTUAL
-    CMP AX, 15          ; 15 filas
+    CMP AX, 21          ; 21 filas
     JAE FIN_MAPA_COMPLETO
     
     MOV COLUMNA_ACTUAL, 0  ; Columna 0
     
 PROXIMA_COLUMNA_MAPA:
     MOV AX, COLUMNA_ACTUAL
-    CMP AX, 20          ; 20 columnas
+    CMP AX, 40          ; 40 columnas
     JAE SIGUIENTE_FILA_MAPA
     
     ; Obtener tile del mapa
@@ -237,11 +237,11 @@ DIBUJAR_HUD PROC
     PUSH DX
     
     MOV CX, 0
-    MOV DX, 240      
+    MOV DX, 336      ; Línea debajo del área de juego
     MOV AL, COLOR_BLANCO
     
 DIBUJAR_LINEA_HUD:
-    CMP CX, 320
+    CMP CX, 640      ; 640 pixels de ancho
     JAE FIN_HUD
     CALL ESCRIBIR_PIXEL
     INC CX

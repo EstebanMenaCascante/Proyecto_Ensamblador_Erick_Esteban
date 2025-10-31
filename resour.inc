@@ -12,59 +12,159 @@
 
 .CODE
 
-; CARGAR RECURSOS
+; CARGAR RECURSOS (ahora aleatorio)
 
 CARGAR_RECURSOS PROC
-    ; Minerales (Tipo 1)
-    MOV RECURSOS[0], 80    ; X
-    MOV RECURSOS[2], 80    ; Y
-    MOV RECURSOS[4], 1     ; Tipo
-    MOV RECURSOS[6], 1     ; Activo
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
     
-    MOV RECURSOS[8], 120
-    MOV RECURSOS[10], 60
-    MOV RECURSOS[12], 1
-    MOV RECURSOS[14], 1
+    MOV SI, 0               ; Índice en array de recursos
+    MOV DI, 0               ; Contador de recursos colocados
     
-    MOV RECURSOS[16], 200
-    MOV RECURSOS[18], 100
-    MOV RECURSOS[20], 1
-    MOV RECURSOS[22], 1
+    ; Colocar 5 minerales (tipo 1)
+    MOV CX, 5
+COLOCAR_MINERALES:
+    PUSH CX
+    MOV BX, 1               ; Tipo mineral
+    CALL GENERAR_POSICION_RECURSO
+    POP CX
+    LOOP COLOCAR_MINERALES
     
-    ; Madera (Tipo 2)
-    MOV RECURSOS[24], 100
-    MOV RECURSOS[26], 150
-    MOV RECURSOS[28], 2
-    MOV RECURSOS[30], 1
+    ; Colocar 5 maderas (tipo 2)
+    MOV CX, 5
+COLOCAR_MADERAS:
+    PUSH CX
+    MOV BX, 2               ; Tipo madera
+    CALL GENERAR_POSICION_RECURSO
+    POP CX
+    LOOP COLOCAR_MADERAS
     
-    MOV RECURSOS[32], 180
-    MOV RECURSOS[34], 80
-    MOV RECURSOS[36], 2
-    MOV RECURSOS[38], 1
+    ; Colocar 5 frutas (tipo 3)
+    MOV CX, 5
+COLOCAR_FRUTAS:
+    PUSH CX
+    MOV BX, 3               ; Tipo fruta
+    CALL GENERAR_POSICION_RECURSO
+    POP CX
+    LOOP COLOCAR_FRUTAS
     
-    MOV RECURSOS[40], 240
-    MOV RECURSOS[42], 180
-    MOV RECURSOS[44], 2
-    MOV RECURSOS[46], 1
-    
-    ; Fruta (Tipo 3)
-    MOV RECURSOS[48], 60
-    MOV RECURSOS[50], 140
-    MOV RECURSOS[52], 3
-    MOV RECURSOS[54], 1
-    
-    MOV RECURSOS[56], 140
-    MOV RECURSOS[58], 200
-    MOV RECURSOS[60], 3
-    MOV RECURSOS[62], 1
-    
-    MOV RECURSOS[64], 220
-    MOV RECURSOS[66], 120
-    MOV RECURSOS[68], 3
-    MOV RECURSOS[70], 1
-    
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
     RET
 CARGAR_RECURSOS ENDP
+
+
+; GENERAR POSICIÓN ALEATORIA PARA UN RECURSO
+; BX = tipo de recurso
+
+GENERAR_POSICION_RECURSO PROC
+    PUSH AX
+    PUSH CX
+    PUSH DX
+    
+REINTENTAR_POSICION:
+    ; Generar X aleatorio (16 a 624 para 640 pixels)
+    CALL NUMERO_ALEATORIO
+    MOV DX, 0
+    MOV CX, 608             ; 624-16
+    DIV CX
+    ADD DX, 16
+    MOV RECURSOS[SI], DX    ; Guardar X
+    
+    ; Generar Y aleatorio (16 a 320 para 336 pixels)
+    CALL NUMERO_ALEATORIO
+    MOV DX, 0
+    MOV CX, 304             ; 320-16
+    DIV CX
+    ADD DX, 16
+    MOV RECURSOS[SI+2], DX  ; Guardar Y
+    
+    ; Verificar que no esté en un obstáculo
+    PUSH BX
+    PUSH SI
+    CALL VERIFICAR_POSICION_RECURSO_VALIDA
+    POP SI
+    POP BX
+    JC REINTENTAR_POSICION  ; Si carry está activo, posición inválida
+    
+    ; Guardar tipo y estado
+    MOV RECURSOS[SI+4], BX  ; Tipo
+    MOV WORD PTR RECURSOS[SI+6], 1   ; Activo
+    
+    ADD SI, 8               ; Siguiente recurso
+    
+    POP DX
+    POP CX
+    POP AX
+    RET
+GENERAR_POSICION_RECURSO ENDP
+
+
+; VERIFICAR SI LA POSICIÓN DEL RECURSO ES VÁLIDA
+; Entrada: RECURSOS[SI] = X, RECURSOS[SI+2] = Y
+; Salida: CF = 1 si inválida, CF = 0 si válida
+
+VERIFICAR_POSICION_RECURSO_VALIDA PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    
+    ; Convertir coordenadas a posición de tile
+    MOV AX, RECURSOS[SI]
+    ADD AX, 8               ; Centro del recurso
+    MOV CX, 16
+    XOR DX, DX
+    DIV CX
+    MOV BX, AX              ; BX = columna
+    
+    MOV AX, RECURSOS[SI+2]
+    ADD AX, 8
+    XOR DX, DX
+    DIV CX
+    MOV DX, AX              ; DX = fila
+    
+    ; Calcular índice en el mapa
+    MOV AX, DX
+    MOV CX, 40              ; 40 columnas
+    MUL CX
+    ADD AX, BX
+    
+    ; Verificar límites
+    CMP AX, 840
+    JAE POSICION_INVALIDA
+    
+    MOV BX, AX
+    
+    ; Verificar que sea tierra (0) o hierba (3)
+    MOV AL, MAPA_DATOS[BX]
+    CMP AL, 0
+    JE POSICION_VALIDA
+    CMP AL, 3
+    JE POSICION_VALIDA
+    
+POSICION_INVALIDA:
+    STC                     ; Set carry = posición inválida
+    JMP FIN_VERIFICAR_REC
+    
+POSICION_VALIDA:
+    CLC                     ; Clear carry = posición válida
+    
+FIN_VERIFICAR_REC:
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+VERIFICAR_POSICION_RECURSO_VALIDA ENDP
 
 
 ; DIBUJAR RECURSOS 
@@ -98,11 +198,11 @@ DIBUJAR_RECURSO_LOOP:
     ; Verificar si está dentro de la pantalla
     CMP BX, 0
     JL SIGUIENTE_RECURSO
-    CMP BX, 320
+    CMP BX, 640             ; 640 pixels de ancho
     JAE SIGUIENTE_RECURSO
     CMP DX, 0
     JL SIGUIENTE_RECURSO
-    CMP DX, 240
+    CMP DX, 336             ; 336 pixels de alto
     JAE SIGUIENTE_RECURSO
     
     ; Dibujar recurso con su color
