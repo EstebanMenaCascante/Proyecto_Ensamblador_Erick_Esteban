@@ -336,15 +336,36 @@ POSITIVO_X:
     NEG BX
 POSITIVO_Y:
     
-    ; Verificar si est� cerca (16 p�xeles)
+    ; Verificar si está cerca (16 píxeles)
     CMP AX, 16
     JG SIGUIENTE_RECOLECCION
     CMP BX, 16
     JG SIGUIENTE_RECOLECCION
     
+    ; Guardar posición del recurso para el efecto
+    PUSH AX
+    PUSH BX
+    MOV BX, RECURSOS[SI]
+    MOV DX, RECURSOS[SI+2]
+    CALL EFECTO_RECOLECCION
+    POP BX
+    POP AX
+    
     ; Recolectar recurso
     MOV RECURSOS[SI+6], 0
     MOV BX, RECURSOS[SI+4]
+    
+    ; Agregar puntos según el tipo
+    PUSH BX
+    CALL AGREGAR_PUNTOS_HUD
+    POP BX
+    
+    ; Reproducir sonido de recolección
+    PUSH SI
+    CALL SONIDO_RECOLECTAR
+    POP SI
+    
+    ; Actualizar inventario
     DEC BX
     INC INVENTARIO[BX]
     

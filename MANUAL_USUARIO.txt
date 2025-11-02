@@ -1,0 +1,279 @@
+===============================================================================
+                    MANUAL DE USUARIO - JUEGO DE EXPLORACIÓN
+===============================================================================
+
+                        Proyecto de Arquitectura de Computadoras
+                            Desarrollado por: Erick y Esteban
+                                    Noviembre 2025
+
+===============================================================================
+                              TABLA DE CONTENIDOS
+===============================================================================
+
+1. Introducción
+2. Requisitos del Sistema
+3. Instalación y Ejecución
+4. Cómo Jugar
+5. Elementos del Juego
+6. Sistema de Puntuación
+7. Controles
+8. Consejos y Estrategias
+9. Solución de Problemas
+10. Créditos
+
+===============================================================================
+                              1. INTRODUCCIÓN
+===============================================================================
+
+Bienvenido al Juego de Exploración y Recolección de Recursos, un proyecto
+desarrollado en lenguaje ensamblador x86 para el curso de Arquitectura de
+Computadoras.
+
+El objetivo del juego es simple: explora el mapa generado aleatoriamente y
+recolecta todos los recursos disponibles para obtener la mayor puntuación
+posible.
+
+===============================================================================
+                          2. REQUISITOS DEL SISTEMA
+===============================================================================
+
+HARDWARE MÍNIMO:
+- Procesador Intel 8086 o compatible
+- 640 KB de RAM
+- Tarjeta gráfica EGA (Enhanced Graphics Adapter)
+- PC Speaker para efectos de sonido
+- Teclado
+
+SISTEMAS OPERATIVOS COMPATIBLES:
+- MS-DOS 3.0 o superior
+- FreeDOS
+- DOSBox (recomendado para sistemas modernos)
+
+===============================================================================
+                        3. INSTALACIÓN Y EJECUCIÓN
+===============================================================================
+
+PASO 1: COMPILACIÓN
+-------------------
+Si tienes los archivos fuente (.asm), compila con:
+
+    tasm /zi GAME.asm
+    tlink /v GAME.obj
+
+PASO 2: EJECUCIÓN
+-----------------
+Ejecuta el archivo compilado:
+
+    GAME.exe
+
+EN DOSBOX (Windows/Linux/Mac):
+------------------------------
+1. Abre DOSBox
+2. Monta la carpeta del proyecto:
+   mount c c:\ruta\al\proyecto
+   c:
+3. Ejecuta:
+   GAME.exe
+
+===============================================================================
+                              4. CÓMO JUGAR
+===============================================================================
+
+INICIO DEL JUEGO:
+-----------------
+1. Al ejecutar GAME.exe, verás la pantalla de inicio con el título del juego
+2. Lee las instrucciones en pantalla
+3. Presiona CUALQUIER TECLA para comenzar
+4. El mapa se generará aleatoriamente
+
+DURANTE EL JUEGO:
+-----------------
+1. Usa las teclas W, A, S, D para mover a tu personaje (cuadrado rojo)
+2. Camina sobre los recursos para recolectarlos automáticamente
+3. Observa el HUD en la parte superior para ver tu progreso
+4. Los recursos desaparecen cuando los recolectas
+5. Escucharás un "beep" cada vez que recolectes algo
+
+GANAR EL JUEGO:
+---------------
+1. Recolecta TODOS los recursos del mapa:
+   - 2 Minerales (cuadrados grises)
+   - 2 Maderas (cuadrados marrones)
+   - 2 Frutas (cuadrados rojos)
+2. Al completar, verás la pantalla de victoria con tu puntuación final
+3. Presiona cualquier tecla para salir
+
+===============================================================================
+                          5. ELEMENTOS DEL JUEGO
+===============================================================================
+
+TERRENOS:
+---------
+[■] TIERRA (Marrón)    - Terreno normal, puedes caminar libremente
+[■] PIEDRA (Negro)     - Obstáculo sólido, NO puedes atravesarlo
+[■] AGUA (Azul)        - Obstáculo líquido, NO puedes atravesarlo
+[■] HIERBA (Verde)     - Decoración, puedes caminar sobre ella
+
+RECURSOS RECOLECTABLES:
+-----------------------
+[○] MINERAL (Gris)     - Vale 10 puntos
+[□] MADERA (Marrón)    - Vale 15 puntos
+[●] FRUTA (Rojo)       - Vale 20 puntos
+
+JUGADOR:
+--------
+[■] TÚ (Rojo brillante) - Tu avatar, controlas con W, A, S, D
+
+HUD (Interfaz Superior):
+------------------------
+El HUD muestra en tiempo real:
+- Icono de cada recurso + cantidad recolectada / objetivo
+- Puntuación total acumulada
+
+===============================================================================
+                        6. SISTEMA DE PUNTUACIÓN
+===============================================================================
+
+PUNTOS POR RECURSO:
+-------------------
+Mineral ......... 10 puntos cada uno
+Madera .......... 15 puntos cada uno
+Fruta ........... 20 puntos cada uno
+
+PUNTUACIÓN MÁXIMA:
+------------------
+2 Minerales × 10 = 20 puntos
+2 Maderas × 15   = 30 puntos
+2 Frutas × 20    = 40 puntos
+                   ─────────
+TOTAL MÁXIMO     = 90 puntos
+
+ESTRATEGIA:
+-----------
+No hay bonus de tiempo, así que tómate tu tiempo para explorar el mapa
+completamente. ¡Asegúrate de encontrar todos los recursos!
+
+===============================================================================
+                              7. CONTROLES
+===============================================================================
+
+TECLADO:
+--------
+W ........... Mover ARRIBA
+A ........... Mover IZQUIERDA
+S ........... Mover ABAJO
+D ........... Mover DERECHA
+ESC ......... SALIR del juego (en cualquier momento)
+
+NOTAS:
+------
+- Los controles son sensibles, mantén presionada la tecla para moverte
+- No puedes moverte en diagonal
+- El personaje no puede atravesar obstáculos (piedra o agua)
+- No hay límite de tiempo, explora con calma
+
+===============================================================================
+                        8. CONSEJOS Y ESTRATEGIAS
+===============================================================================
+
+PARA PRINCIPIANTES:
+-------------------
+1. Explora metódicamente: recorre el mapa de forma ordenada
+2. Memoriza la posición de los recursos antes de recolectarlos
+3. Usa los obstáculos como puntos de referencia
+4. No te apresures, no hay límite de tiempo
+
+PARA EXPERTOS:
+--------------
+1. Planifica tu ruta para minimizar backtracking
+2. Prioriza las frutas (más puntos) al final para saber dónde están
+3. Usa el HUD para saber qué te falta sin perder tiempo buscando
+
+CARACTERÍSTICAS DEL MAPA:
+-------------------------
+- El mapa se genera ALEATORIAMENTE cada vez que juegas
+- Los recursos SIEMPRE aparecen en posiciones caminables
+- El mapa es más grande que la pantalla, debes explorar
+
+===============================================================================
+                        9. SOLUCIÓN DE PROBLEMAS
+===============================================================================
+
+PROBLEMA: La pantalla está en negro
+SOLUCIÓN: Presiona cualquier tecla, estás en la pantalla de inicio
+
+PROBLEMA: No puedo ver el modo gráfico correctamente
+SOLUCIÓN: Asegúrate de que tu sistema/DOSBox soporte modo EGA
+          En DOSBox, verifica machine=svga_s3 en dosbox.conf
+
+PROBLEMA: No escucho sonidos
+SOLUCIÓN: En DOSBox, edita dosbox.conf:
+          [speaker]
+          pcspeaker=true
+          pcrate=44100
+
+PROBLEMA: El juego va muy lento
+SOLUCIÓN: En DOSBox, aumenta los cycles:
+          cycles=10000 o cycles=max
+
+PROBLEMA: El juego va muy rápido
+SOLUCIÓN: En DOSBox, reduce los cycles:
+          cycles=3000
+
+PROBLEMA: Error al compilar
+SOLUCIÓN: Verifica que todos los archivos .INC estén presentes:
+          - Graph.inc
+          - map.inc
+          - player.inc
+          - resour.inc
+          - input.inc
+          - menu.inc
+          - hud.inc
+          - sound.inc
+          - effects.inc
+
+PROBLEMA: El personaje se queda atascado
+SOLUCIÓN: Presiona ESC para salir y reinicia el juego
+          (El mapa se generará diferente)
+
+===============================================================================
+                              10. CRÉDITOS
+===============================================================================
+
+DESARROLLO:
+-----------
+Erick ............... Programación principal, gráficos, mapas
+Esteban ............. Sistema de recursos, HUD, sonidos
+
+HERRAMIENTAS:
+-------------
+Lenguaje ............ Ensamblador x86 (Intel 8086)
+Ensamblador ......... TASM (Turbo Assembler)
+Linker .............. TLINK (Turbo Linker)
+Emulador ............ DOSBox
+
+ESPECIFICACIONES TÉCNICAS:
+--------------------------
+Modo gráfico ........ EGA 640x350 (16 colores)
+Interrupción ........ INT 10h (modo 10h)
+Memoria de video .... Segmento A000h
+Mapa ................ 40×21 tiles (16×16 pixels cada uno)
+FPS ................. ~30 (con delay de 1ms por frame)
+
+CURSO:
+------
+Materia ............. Arquitectura de Computadoras
+Institución ......... [Tu Universidad]
+Profesor ............ [Nombre del Profesor]
+Fecha ............... Noviembre 2025
+
+===============================================================================
+
+                        ¡GRACIAS POR JUGAR!
+                     
+                Intenta obtener la puntuación máxima
+                    ¡90 puntos es el objetivo!
+
+===============================================================================
+                              FIN DEL MANUAL
+===============================================================================

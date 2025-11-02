@@ -1,0 +1,723 @@
+===============================================================================
+                        DOCUMENTACIÓN TÉCNICA
+                    Juego de Exploración y Recolección
+===============================================================================
+
+PROYECTO: Juego de Exploración en Ensamblador x86
+AUTORES: Erick y Esteban
+FECHA: Noviembre 2025
+CURSO: Arquitectura de Computadoras
+
+===============================================================================
+                          TABLA DE CONTENIDOS
+===============================================================================
+
+1. Arquitectura del Sistema
+2. Diagrama de Flujo Principal
+3. Módulos del Sistema
+4. Estructura de Datos
+5. Interrupciones Utilizadas
+6. Mapas de Memoria
+7. Algoritmos Principales
+8. Consideraciones de Rendimiento
+
+===============================================================================
+                      1. ARQUITECTURA DEL SISTEMA
+===============================================================================
+
+El juego está dividido en módulos independientes (.INC) para facilitar
+el mantenimiento y desarrollo:
+
+GAME.asm          → Módulo principal, control del flujo
+Graph.inc         → Funciones de dibujo y modo gráfico
+map.inc           → Generación y manejo del mapa
+player.inc        → Control del jugador y movimiento
+resour.inc        → Sistema de recursos e inventario
+input.inc         → Manejo de entrada de teclado
+menu.inc          → Pantalla de inicio y menú
+hud.inc           → Interfaz de usuario (HUD)
+sound.inc         → Efectos de sonido (PC Speaker)
+effects.inc       → Efectos visuales
+
+FLUJO DE DATOS:
+---------------
+Teclado → input.inc → player.inc → map.inc (colisiones)
+                                 ↓
+                              resour.inc (recolección)
+                                 ↓
+                              hud.inc (actualizar UI)
+                                 ↓
+                            Graph.inc (renderizar)
+
+===============================================================================
+                      2. DIAGRAMA DE FLUJO PRINCIPAL
+===============================================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         INICIO DEL JUEGO                        │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               Inicializar Segmento de Datos (DS)                │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  MOSTRAR_MENU_INICIO                            │
+│  - Cambiar a modo texto (INT 10h, AX=03h)                       │
+│  - Mostrar título ASCII                                         │
+│  - Mostrar instrucciones                                        │
+│  - Esperar tecla (INT 16h)                                      │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              INICIAR_MODO_GRAFICO                               │
+│  - INT 10h, AX=0010h (EGA 640x350)                              │
+│  - Configurar segmento de video A000h                           │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    CARGAR_MAPA                                  │
+│  - Establecer dimensiones (40x21 tiles)                         │
+│  - Inicializar semilla aleatoria                                │
+│  - Generar mapa aleatorio                                       │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               INICIALIZAR_JUGADOR                               │
+│  - Posición inicial: (320, 160) - centro pantalla               │
+│  - Dirección: 0                                                 │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  CARGAR_RECURSOS                                │
+│  - Generar posiciones aleatorias para:                          │
+│    * 5 Minerales (tipo 1)                                       │
+│    * 5 Maderas (tipo 2)                                         │
+│    * 5 Frutas (tipo 3)                                          │
+│  - Verificar posiciones válidas (no en obstáculos)              │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│             DIBUJAR_FRAME_COMPLETO                              │
+│  - Dibujar todos los tiles del mapa                             │
+│  - Dibujar recursos activos                                     │
+│  - Dibujar jugador                                              │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    DIBUJAR_HUD                                  │
+│  - Dibujar barra superior                                       │
+│  - Mostrar inventario (iconos + números)                        │
+│  - Mostrar puntuación                                           │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+╔═════════════════════════════════════════════════════════════════╗
+║                     BUCLE_PRINCIPAL                             ║
+╚══════════════════════════════┬══════════════════════════════════╝
+                               │
+                ┌──────────────┴──────────────┐
+                │                             │
+                ▼                             │
+┌─────────────────────────────────────┐       │
+│         LEER_TECLADO                │       │
+│  - Verificar tecla presionada       │       │
+│  - W/A/S/D: mover jugador           │       │
+│  - ESC: salir del juego             │       │
+└────────────────┬────────────────────┘       │
+                 │                            │
+                 ▼                            │
+┌─────────────────────────────────────┐       │
+│     VERIFICAR_COLISION              │       │
+│  - Calcular nueva posición          │       │
+│  - Verificar tile de destino        │       │
+│  - Si es válido: actualizar         │       │
+│  - Si no: mantener posición         │       │
+└────────────────┬────────────────────┘       │
+                 │                            │
+                 ▼                            │
+┌─────────────────────────────────────┐       │
+│    BORRAR_JUGADOR_ANTERIOR          │       │
+│  - Dibujar tile del piso en         │       │
+│    posición anterior                │       │
+└────────────────┬────────────────────┘       │
+                 │                            │
+                 ▼                            │
+┌─────────────────────────────────────┐       │
+│       DIBUJAR_JUGADOR               │       │
+│  - Dibujar cuadrado rojo 16x16      │       │
+│    en nueva posición                │       │
+└────────────────┬────────────────────┘       │
+                 │                            │
+                 ▼                            │
+┌─────────────────────────────────────┐       │
+│    VERIFICAR_RECOLECCION            │       │
+│  - Para cada recurso activo:        │       │
+│    * Calcular distancia al jugador  │       │
+│    * Si distancia < 16 pixels:      │       │
+│      - Desactivar recurso           │       │
+│      - EFECTO_RECOLECCION           │       │
+│      - AGREGAR_PUNTOS               │       │
+│      - SONIDO_RECOLECTAR            │       │
+│      - Incrementar inventario       │       │
+└────────────────┬────────────────────┘       │
+                 │                            │
+                 ▼                            │
+┌─────────────────────────────────────┐       │
+│        DIBUJAR_HUD                  │       │
+│  - Actualizar inventario visible    │       │
+│  - Actualizar puntuación            │       │
+└────────────────┬────────────────────┘       │
+                 │                            │
+                 ▼                            │
+┌─────────────────────────────────────┐       │
+│        DELAY (1ms)                  │       │
+│  - INT 15h, AH=86h                  │       │
+│  - CX=0, DX=1000                    │       │
+└────────────────┬────────────────────┘       │
+                 │                            │
+                 ▼                            │
+┌─────────────────────────────────────┐       │
+│     VERIFICAR_VICTORIA              │       │
+│  - Para cada tipo de recurso:       │       │
+│    * Comparar inventario con        │       │
+│      objetivo                       │       │
+│  - Si todos cumplidos: AL=1         │       │
+│  - Si no: AL=0                      │       │
+└────────────────┬────────────────────┘       │
+                 │                            │
+                 ▼                            │
+              ┌──┴──┐                         │
+              │AL=1?│                         │
+              └──┬──┘                         │
+        No       │       Sí                   │
+        ┌────────┴────────┐                  │
+        │                 │                  │
+        └─────────────────┘                  │
+                          │                  │
+                          ▼                  │
+        ┌─────────────────────────────────┐  │
+        │     SONIDO_VICTORIA             │  │
+        │  - Secuencia de 3 notas         │  │
+        │    ascendentes (Do-Mi-Sol)      │  │
+        └────────────────┬────────────────┘  │
+                         │                   │
+                         ▼                   │
+        ┌─────────────────────────────────┐  │
+        │    PANTALLA_VICTORIA            │  │
+        │  - Volver a modo texto          │  │
+        │  - Mostrar mensaje de victoria  │  │
+        │  - Mostrar puntuación final     │  │
+        │  - Esperar tecla                │  │
+        └────────────────┬────────────────┘  │
+                         │                   │
+                         ▼                   │
+        ┌─────────────────────────────────┐  │
+        │      Volver a MS-DOS            │  │
+        │  - INT 21h, AH=4Ch              │  │
+        └─────────────────────────────────┘  │
+                                              │
+                                              │
+                    ┌─────────────────────────┘
+                    │
+                    ▼
+                 (Loop)
+
+===============================================================================
+                         3. MÓDULOS DEL SISTEMA
+===============================================================================
+
+3.1 GRAPH.INC
+-------------
+Funciones:
+  - INICIAR_MODO_GRAFICO: Establece modo EGA 640x350
+  - ESCRIBIR_PIXEL(CX, DX, AL): Dibuja pixel en (X,Y) con color AL
+  - DIBUJAR_FRAME_COMPLETO: Renderiza toda la escena
+
+Variables:
+  - TILE_X, TILE_Y: Posición temporal para dibujo
+  - TILE_COLOR: Color temporal
+
+3.2 MAP.INC
+-----------
+Funciones:
+  - CARGAR_MAPA: Genera mapa aleatorio
+  - GENERAR_MAPA_ALEATORIO: Llena el array MAPA_DATOS
+  - COLOCAR_OBSTACULOS_PIEDRA: Añade piedras al mapa
+  - COLOCAR_OBSTACULOS_AGUA: Añade agua al mapa
+  - COLOCAR_HIERBA: Añade decoración
+  - DIBUJAR_MAPA: Renderiza el mapa en pantalla
+  - NUMERO_ALEATORIO: Generador pseudoaleatorio
+
+Variables:
+  - MAPA_ANCHO: 40 (tiles horizontales)
+  - MAPA_ALTO: 21 (tiles verticales)
+  - MAPA_DATOS: Array de 840 bytes (40×21)
+  - SEMILLA: Semilla para RNG
+
+Valores de tiles:
+  0 = Tierra (marrón)
+  1 = Piedra (negro)
+  2 = Agua (azul)
+  3 = Hierba (verde)
+
+3.3 PLAYER.INC
+--------------
+Funciones:
+  - INICIALIZAR_JUGADOR: Posiciona al jugador en el centro
+  - DIBUJAR_JUGADOR: Dibuja sprite 16x16 rojo
+  - BORRAR_JUGADOR_ANTERIOR: Limpia posición previa
+  - MOVER_ARRIBA/ABAJO/IZQUIERDA/DERECHA: Mueve con colisión
+
+Variables:
+  - JUGADOR_X: Posición X actual (0-624)
+  - JUGADOR_Y: Posición Y actual (0-320)
+  - JUGADOR_X_ANTERIOR: Posición X previa
+  - JUGADOR_Y_ANTERIOR: Posición Y previa
+  - DIRECCION: Dirección actual (0-3)
+
+3.4 RESOUR.INC
+--------------
+Funciones:
+  - CARGAR_RECURSOS: Genera 15 recursos aleatorios
+  - GENERAR_POSICION_RECURSO: Calcula posición válida
+  - VERIFICAR_POSICION_RECURSO_VALIDA: Valida posición
+  - DIBUJAR_RECURSOS: Renderiza recursos activos
+  - VERIFICAR_RECOLECCION: Detecta colisión jugador-recurso
+  - VERIFICAR_VICTORIA: Comprueba condición de victoria
+
+Variables:
+  - RECURSOS: Array de 15×4 words = 120 bytes
+    Estructura: [X, Y, Tipo, Activo] × 15
+  - INVENTARIO: Array de 3 bytes [minerales, madera, frutas]
+  - OBJETIVO: [2, 2, 2] - recursos a recolectar
+
+Tipos de recursos:
+  1 = Mineral (gris)
+  2 = Madera (marrón)
+  3 = Fruta (rojo)
+
+3.5 INPUT.INC
+-------------
+Funciones:
+  - LEER_TECLADO: Lee tecla sin bloqueo (INT 16h, AH=01h)
+  - Procesa W/A/S/D/ESC
+
+Scan codes:
+  W = 11h (arriba)
+  A = 1Eh (izquierda)
+  S = 1Fh (abajo)
+  D = 20h (derecha)
+  ESC = 01h (salir)
+
+3.6 MENU.INC
+------------
+Funciones:
+  - MOSTRAR_MENU_INICIO: Muestra pantalla de bienvenida
+
+Variables:
+  - TITULO_LINEA1-6: ASCII art del título
+  - INSTRUCCION1-4: Textos de ayuda
+  - CREDITOS: Nombres de autores
+
+3.7 HUD.INC
+-----------
+Funciones:
+  - DIBUJAR_HUD: Renderiza interfaz superior
+  - DIBUJAR_BARRA_HUD: Dibuja fondo gris 640×30
+  - DIBUJAR_INVENTARIO_HUD: Muestra recursos recolectados
+  - DIBUJAR_PUNTUACION_HUD: Muestra puntos totales
+  - AGREGAR_PUNTOS(BL): Añade puntos según tipo de recurso
+  - DIBUJAR_NUMERO_HUD: Dibuja dígito en pantalla
+
+Variables:
+  - PUNTUACION: Word, puntos totales
+  - PUNTOS_MINERAL: 10
+  - PUNTOS_MADERA: 15
+  - PUNTOS_FRUTA: 20
+
+3.8 SOUND.INC
+-------------
+Funciones:
+  - SONIDO_RECOLECTAR: Beep corto (1000 Hz, 100ms)
+  - SONIDO_VICTORIA: Melodía de 3 notas (Do-Mi-Sol)
+  - SONIDO_BEEP: Beep genérico (800 Hz, 50ms)
+  - SONIDO_ERROR: Beep grave (200 Hz, 80ms)
+
+Método:
+  - OUT 43h: Comando al timer
+  - OUT 42h: Frecuencia (byte bajo/alto)
+  - OUT 61h: Activar/desactivar speaker
+  - INT 15h: Delay
+
+Fórmula frecuencia:
+  AX = 1193180 / frecuencia_hz
+
+3.9 EFFECTS.INC
+---------------
+Funciones:
+  - EFECTO_RECOLECCION(BX, DX): Dibuja partículas
+  - DIBUJAR_PARTICULAS: Círculo de 8 puntos amarillos
+  - EFECTO_PARPADEO: Hace parpadear al jugador
+  - EFECTO_FADE_IN: Fade-in gradual
+
+Variables:
+  - EFECTO_X, EFECTO_Y: Posición del efecto
+  - EFECTO_ACTIVO: Bandera de efecto en curso
+  - EFECTO_CONTADOR: Frames restantes del efecto
+
+===============================================================================
+                        4. ESTRUCTURA DE DATOS
+===============================================================================
+
+4.1 MAPA
+--------
+Tipo: Array de bytes
+Tamaño: 840 bytes (40 columnas × 21 filas)
+Índice: (fila × 40) + columna
+
+Ejemplo:
+  Fila 0:  [0][0][0][1][1][0][0]...  (40 tiles)
+  Fila 1:  [0][0][2][2][0][0][0]...
+  ...
+  Fila 20: [0][0][0][0][0][0][0]...
+
+4.2 RECURSOS
+------------
+Tipo: Array de words
+Tamaño: 15 recursos × 4 words = 60 words = 120 bytes
+
+Estructura por recurso (8 bytes):
+  Offset 0: X (word) - Posición horizontal (0-624)
+  Offset 2: Y (word) - Posición vertical (0-320)
+  Offset 4: Tipo (word) - 1=Mineral, 2=Madera, 3=Fruta
+  Offset 6: Activo (word) - 0=Recolectado, 1=Disponible
+
+Ejemplo en memoria:
+  [0140h][00A0h][0001h][0001h] → Mineral en (320,160), activo
+  [0200h][0050h][0003h][0000h] → Fruta en (512,80), recolectada
+
+4.3 INVENTARIO
+--------------
+Tipo: Array de bytes
+Tamaño: 3 bytes
+
+Estructura:
+  Byte 0: Minerales recolectados (0-2)
+  Byte 1: Maderas recolectadas (0-2)
+  Byte 2: Frutas recolectadas (0-2)
+
+4.4 JUGADOR
+-----------
+Variables separadas:
+  JUGADOR_X: Word - Posición X (0-624)
+  JUGADOR_Y: Word - Posición Y (0-320)
+  JUGADOR_X_ANTERIOR: Word
+  JUGADOR_Y_ANTERIOR: Word
+  DIRECCION: Byte - 0=Arriba, 1=Derecha, 2=Abajo, 3=Izquierda
+
+===============================================================================
+                      5. INTERRUPCIONES UTILIZADAS
+===============================================================================
+
+INT 10h - VIDEO BIOS
+--------------------
+AH=00h : Establecer modo de video
+         AL=10h → Modo EGA 640×350, 16 colores
+
+AH=02h : Posicionar cursor (modo texto)
+         BH=Página, DH=Fila, DL=Columna
+
+AH=06h : Scroll up (limpiar pantalla con color)
+         AL=Líneas, BH=Atributo, CX=Superior-izq, DX=Inferior-der
+
+AH=09h : Escribir string (modo texto)
+         DX=Offset del string (terminado en '$')
+
+AH=0Ch : Escribir pixel
+         AL=Color, BH=Página, CX=X, DX=Y
+         (No usado, usamos escritura directa)
+
+INT 16h - TECLADO
+-----------------
+AH=00h : Leer tecla (con espera)
+         Retorna: AH=Scan code, AL=ASCII
+
+AH=01h : Verificar tecla (sin espera)
+         ZF=1 si no hay tecla
+         ZF=0 si hay tecla (AH=Scan code)
+
+INT 15h - DELAY
+---------------
+AH=86h : Esperar (microsegundos)
+         CX:DX = Microsegundos a esperar
+
+INT 21h - DOS
+-------------
+AH=02h : Escribir carácter
+         DL=Carácter
+
+AH=09h : Escribir string
+         DX=Offset del string
+
+AH=2Ch : Obtener hora del sistema
+         CH=Hora, CL=Minutos, DH=Segundos, DL=Centésimas
+
+AH=4Ch : Terminar programa
+         AL=Código de salida
+
+===============================================================================
+                         6. MAPAS DE MEMORIA
+===============================================================================
+
+6.1 MEMORIA DE VIDEO EGA
+------------------------
+Modo 10h (EGA 640×350):
+  Segmento: A000h
+  Offset del pixel: (Y × 80) + (X / 8)
+  Bit del pixel: 7 - (X mod 8)
+  Planos: 4 (RGBI)
+
+Cálculo de dirección:
+  Dirección = A000h:((Y × 80) + (X ÷ 8))
+  Máscara = 80h >> (X mod 8)
+
+Escritura directa:
+  MOV AX, 0A000h
+  MOV ES, AX
+  MOV DI, (Y × 80) + (X / 8)
+  MOV AL, color
+  STOSB
+
+6.2 SEGMENTO DE DATOS
+---------------------
+Sección .DATA comienza en @DATA:
+
+Offset aprox:
+  0000h-001Fh : Strings de menú
+  0020h-003Fh : Strings de HUD
+  0040h-0077h : Array RECURSOS (120 bytes)
+  0078h-007Ah : Array INVENTARIO (3 bytes)
+  007Bh-007Dh : Array OBJETIVO (3 bytes)
+  007Eh-041Dh : Array MAPA_DATOS (840 bytes)
+  041Eh-...   : Variables del jugador, puntuación, etc.
+
+6.3 PILA
+--------
+Tamaño: 100h (256 bytes)
+Definido por: .STACK 100H
+
+Uso:
+  - Preservar registros en funciones (PUSH/POP)
+  - Parámetros de procedimientos
+  - Variables locales temporales
+
+===============================================================================
+                      7. ALGORITMOS PRINCIPALES
+===============================================================================
+
+7.1 GENERADOR DE NÚMEROS ALEATORIOS
+------------------------------------
+Método: Linear Congruential Generator (LCG)
+
+Formula:
+  SEMILLA = (SEMILLA × 25173 + 13849) mod 65536
+
+Código:
+  MOV AX, SEMILLA
+  MOV CX, 25173
+  MUL CX              ; DX:AX = SEMILLA × 25173
+  ADD AX, 13849       ; AX = resultado + 13849
+  MOV SEMILLA, AX     ; Guardar nueva semilla
+  RET                 ; AX contiene número aleatorio (0-65535)
+
+7.2 DETECCIÓN DE COLISIONES
+----------------------------
+Entrada: Nueva posición del jugador (NX, NY)
+Salida: Bandera de colisión
+
+Algoritmo:
+1. Convertir pixels a tile:
+   TileX = (NX + 8) / 16    ; Centro del jugador
+   TileY = (NY + 8) / 16
+
+2. Calcular índice en mapa:
+   Index = TileY × 40 + TileX
+
+3. Leer valor del tile:
+   TileValue = MAPA_DATOS[Index]
+
+4. Verificar:
+   Si TileValue = 1 o TileValue = 2:
+     Colisión = TRUE
+   Sino:
+     Colisión = FALSE
+
+Pseudocódigo:
+  PROCEDURE VerificarColision(NX, NY)
+    TX ← (NX + 8) / 16
+    TY ← (NY + 8) / 16
+    Index ← TY × 40 + TX
+    TileValue ← MAPA_DATOS[Index]
+    
+    IF TileValue = 1 OR TileValue = 2 THEN
+      RETURN FALSE  ; No mover
+    ELSE
+      RETURN TRUE   ; Mover
+    END IF
+  END PROCEDURE
+
+7.3 VERIFICACIÓN DE RECOLECCIÓN
+--------------------------------
+Entrada: Posición del jugador (JX, JY)
+Salida: Actualización de inventario y puntos
+
+Algoritmo:
+FOR cada recurso I de 0 a 14:
+  SI RECURSOS[I].Activo = 1 ENTONCES:
+    RX ← RECURSOS[I].X
+    RY ← RECURSOS[I].Y
+    
+    ; Calcular distancia Manhattan
+    DX ← ABS(JX + 8 - RX)
+    DY ← ABS(JY + 8 - RY)
+    
+    SI DX < 16 Y DY < 16 ENTONCES:
+      ; Recolectar
+      RECURSOS[I].Activo ← 0
+      Tipo ← RECURSOS[I].Tipo
+      
+      ; Añadir al inventario
+      INVENTARIO[Tipo - 1] ← INVENTARIO[Tipo - 1] + 1
+      
+      ; Añadir puntos
+      SELECCIONAR Tipo:
+        CASO 1: PUNTUACION ← PUNTUACION + 10
+        CASO 2: PUNTUACION ← PUNTUACION + 15
+        CASO 3: PUNTUACION ← PUNTUACION + 20
+      FIN SELECCIONAR
+      
+      ; Efectos
+      LLAMAR EFECTO_RECOLECCION(RX, RY)
+      LLAMAR SONIDO_RECOLECTAR()
+    FIN SI
+  FIN SI
+FIN FOR
+
+Complejidad: O(n) donde n = 15 (número de recursos)
+
+7.4 VERIFICACIÓN DE VICTORIA
+-----------------------------
+Condición: Todos los recursos objetivo recolectados
+
+Algoritmo:
+  PARA i ← 0 HASTA 2:
+    SI INVENTARIO[i] < OBJETIVO[i] ENTONCES:
+      RETORNAR FALSO
+    FIN SI
+  FIN PARA
+  RETORNAR VERDADERO
+
+Valores objetivo:
+  OBJETIVO[0] = 2  ; 2 minerales
+  OBJETIVO[1] = 2  ; 2 maderas
+  OBJETIVO[2] = 2  ; 2 frutas
+
+7.5 RENDERIZADO DEL MAPA
+-------------------------
+Algoritmo (simplificado):
+
+FOR fila ← 0 TO 20:
+  FOR columna ← 0 TO 39:
+    ; Calcular índice
+    Index ← fila × 40 + columna
+    TileValue ← MAPA_DATOS[Index]
+    
+    ; Seleccionar color
+    SELECCIONAR TileValue:
+      CASO 0: Color ← MARRON      ; Tierra
+      CASO 1: Color ← NEGRO       ; Piedra
+      CASO 2: Color ← AZUL        ; Agua
+      CASO 3: Color ← VERDE       ; Hierba
+    FIN SELECCIONAR
+    
+    ; Dibujar tile (16×16 pixels)
+    X ← columna × 16
+    Y ← fila × 16
+    
+    PARA py ← 0 TO 15:
+      PARA px ← 0 TO 15:
+        ESCRIBIR_PIXEL(X + px, Y + py, Color)
+      FIN PARA
+    FIN PARA
+  FIN FOR
+FIN FOR
+
+Complejidad: O(w × h × 16 × 16) = O(214,080 pixels)
+Optimización: Solo redibujar áreas cambiadas
+
+===============================================================================
+                  8. CONSIDERACIONES DE RENDIMIENTO
+===============================================================================
+
+8.1 OPTIMIZACIONES IMPLEMENTADAS
+---------------------------------
+1. Escritura directa en memoria de video (en lugar de INT 10h)
+   - Ganancia: ~10× más rápido
+
+2. Redibujado selectivo del jugador
+   - Solo se borra y redibuja el jugador
+   - El mapa permanece estático
+
+3. Verificación de recursos con flag de activación
+   - Solo se procesan recursos activos
+   - Se evitan cálculos innecesarios
+
+4. Delay ajustable entre frames
+   - 1ms por frame = ~1000 FPS teórico
+   - Limitado por velocidad de dibujo real
+
+8.2 CUELLOS DE BOTELLA
+-----------------------
+1. DIBUJAR_FRAME_COMPLETO
+   - Tiempo: ~50-100ms en hardware original
+   - Dibuja 214,080 pixels
+
+2. DIBUJAR_HUD
+   - Tiempo: ~5-10ms
+   - Puede optimizarse con sprites pre-renderizados
+
+3. VERIFICAR_RECOLECCION
+   - Tiempo: <1ms
+   - Loop simple de 15 iteraciones
+
+8.3 FPS ESTIMADO
+----------------
+En hardware original (8086 a 4.77 MHz):
+  - Frame completo: ~10-15 FPS
+  - Solo jugador: ~30-60 FPS
+
+En DOSBox (cycles=3000):
+  - Frame completo: ~20-30 FPS
+  - Solo jugador: ~60+ FPS
+
+8.4 USO DE MEMORIA
+------------------
+Código (.CODE): ~5-8 KB
+Datos (.DATA): ~2 KB
+Pila (.STACK): 256 bytes
+Video: 112 KB (modo EGA)
+
+Total: ~120 KB (muy por debajo del límite de 640 KB)
+
+===============================================================================
+                            FIN DE DOCUMENTO
+===============================================================================
