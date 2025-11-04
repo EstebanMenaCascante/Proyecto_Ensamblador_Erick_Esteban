@@ -34,6 +34,11 @@ LEER_TECLADO PROC
     CMP AL, 'D'
     JE ES_D
     
+    CMP AL, 'e'
+    JE ES_E
+    CMP AL, 'E'
+    JE ES_E
+    
     CMP AL, 27      ; ESC
     JE ES_ESC
     
@@ -51,10 +56,20 @@ ES_A:
 ES_D:
     JMP MOVER_DERECHA
 
+ES_E:
+    JMP ABRIR_INVENTARIO
+
 ES_ESC:
     JMP SALIR_JUEGO
 
 NO_TECLA:
+    RET
+
+
+; ABRIR INVENTARIO
+
+ABRIR_INVENTARIO:
+    CALL MOSTRAR_INVENTARIO_COMPLETO
     RET
 
 
@@ -65,6 +80,9 @@ MOVER_ARRIBA:
     SUB JUGADOR_Y, 2
     CALL VERIFICAR_COLISION
     JNC MOVIMIENTO_OK_ARRIBA
+    ; Verificar si es agua (AL = 2)
+    CMP AL, 2
+    JE MUERTE_POR_AGUA
     ADD JUGADOR_Y, 2
     RET
 MOVIMIENTO_OK_ARRIBA:
@@ -77,6 +95,9 @@ MOVER_ABAJO:
     ADD JUGADOR_Y, 2
     CALL VERIFICAR_COLISION
     JNC MOVIMIENTO_OK_ABAJO
+    ; Verificar si es agua (AL = 2)
+    CMP AL, 2
+    JE MUERTE_POR_AGUA
     SUB JUGADOR_Y, 2
     RET
 MOVIMIENTO_OK_ABAJO:
@@ -88,6 +109,9 @@ MOVER_IZQUIERDA:
     SUB JUGADOR_X, 2
     CALL VERIFICAR_COLISION
     JNC MOVIMIENTO_OK_IZQ
+    ; Verificar si es agua (AL = 2)
+    CMP AL, 2
+    JE MUERTE_POR_AGUA
     ADD JUGADOR_X, 2
     RET
 MOVIMIENTO_OK_IZQ:
@@ -99,10 +123,20 @@ MOVER_DERECHA:
     ADD JUGADOR_X, 2
     CALL VERIFICAR_COLISION
     JNC MOVIMIENTO_OK_DER
+    ; Verificar si es agua (AL = 2)
+    CMP AL, 2
+    JE MUERTE_POR_AGUA
     SUB JUGADOR_X, 2
     RET
 MOVIMIENTO_OK_DER:
     CALL REDIBUJAR_PARCIAL
+    RET
+
+MUERTE_POR_AGUA:
+    ; Llamar a la pantalla de GAME OVER
+    ; (esta función nunca retorna - o reinicia o sale)
+    CALL PANTALLA_GAME_OVER
+    ; Este código nunca debería ejecutarse
     RET
 
 

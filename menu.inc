@@ -12,8 +12,10 @@
     OPCION_INICIO DB 'PRESIONA CUALQUIER TECLA PARA COMENZAR', '$'
     INSTRUCCION1 DB 'CONTROLES:', '$'
     INSTRUCCION2 DB 'W A S D - Movimiento', '$'
-    INSTRUCCION3 DB 'ESC - Salir del juego', '$'
-    INSTRUCCION4 DB 'OBJETIVO: Recolecta todos los recursos!', '$'
+    INSTRUCCION3 DB 'E - Ver inventario', '$'
+    INSTRUCCION4 DB 'ESC - Salir del juego', '$'
+    INSTRUCCION5 DB 'OBJETIVO: Recolecta todos los recursos!', '$'
+    ADVERTENCIA DB '!CUIDADO! NO TOQUES EL AGUA!!', '$'
     CREDITOS DB 'Desarrollado por: Erick y Esteban', '$'
 
 .CODE
@@ -131,7 +133,7 @@ MOSTRAR_MENU_INICIO PROC
     MOV AH, 02H
     MOV BH, 0
     MOV DH, 15
-    MOV DL, 28
+    MOV DL, 29
     INT 10H
     MOV AH, 09H
     LEA DX, INSTRUCCION3
@@ -139,11 +141,38 @@ MOSTRAR_MENU_INICIO PROC
     
     MOV AH, 02H
     MOV BH, 0
-    MOV DH, 17
-    MOV DL, 20
+    MOV DH, 16
+    MOV DL, 28
     INT 10H
     MOV AH, 09H
     LEA DX, INSTRUCCION4
+    INT 21H
+    
+    ; Objetivo
+    MOV AH, 02H
+    MOV BH, 0
+    MOV DH, 18
+    MOV DL, 20
+    INT 10H
+    MOV AH, 09H
+    LEA DX, INSTRUCCION5
+    INT 21H
+    
+    ; Advertencia en rojo (cambiar atributo)
+    MOV AH, 09H
+    MOV AL, 20H         ; Espacio
+    MOV BH, 0
+    MOV BL, 4EH         ; Fondo rojo, texto amarillo
+    MOV CX, 31          ; Longitud del mensaje
+    INT 10H
+    
+    MOV AH, 02H
+    MOV BH, 0
+    MOV DH, 19
+    MOV DL, 25
+    INT 10H
+    MOV AH, 09H
+    LEA DX, ADVERTENCIA
     INT 21H
     
     ; Opción de inicio (parpadeando)

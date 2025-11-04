@@ -287,7 +287,7 @@ Variables:
 3.4 RESOUR.INC
 --------------
 Funciones:
-  - CARGAR_RECURSOS: Genera 15 recursos aleatorios
+  - CARGAR_RECURSOS: Genera 45 recursos aleatorios
   - GENERAR_POSICION_RECURSO: Calcula posición válida
   - VERIFICAR_POSICION_RECURSO_VALIDA: Valida posición
   - DIBUJAR_RECURSOS: Renderiza recursos activos
@@ -295,13 +295,13 @@ Funciones:
   - VERIFICAR_VICTORIA: Comprueba condición de victoria
 
 Variables:
-  - RECURSOS: Array de 15×4 words = 120 bytes
-    Estructura: [X, Y, Tipo, Activo] × 15
-  - INVENTARIO: Array de 3 bytes [minerales, madera, frutas]
-  - OBJETIVO: [2, 2, 2] - recursos a recolectar
+  - RECURSOS: Array de 45×4 words = 360 bytes
+    Estructura: [X, Y, Tipo, Activo] × 45
+  - INVENTARIO: Array de 3 bytes [piedras, madera, frutas]
+  - OBJETIVO: [15, 15, 15] - recursos a recolectar
 
 Tipos de recursos:
-  1 = Mineral (gris)
+  1 = Piedra/Mineral (gris)
   2 = Madera (marrón)
   3 = Fruta (rojo)
 
@@ -393,16 +393,16 @@ Ejemplo:
 4.2 RECURSOS
 ------------
 Tipo: Array de words
-Tamaño: 15 recursos × 4 words = 60 words = 120 bytes
+Tamaño: 45 recursos × 4 words = 180 words = 360 bytes
 
 Estructura por recurso (8 bytes):
   Offset 0: X (word) - Posición horizontal (0-624)
   Offset 2: Y (word) - Posición vertical (0-320)
-  Offset 4: Tipo (word) - 1=Mineral, 2=Madera, 3=Fruta
+  Offset 4: Tipo (word) - 1=Piedra, 2=Madera, 3=Fruta
   Offset 6: Activo (word) - 0=Recolectado, 1=Disponible
 
 Ejemplo en memoria:
-  [0140h][00A0h][0001h][0001h] → Mineral en (320,160), activo
+  [0140h][00A0h][0001h][0001h] → Piedra en (320,160), activo
   [0200h][0050h][0003h][0000h] → Fruta en (512,80), recolectada
 
 4.3 INVENTARIO
@@ -411,9 +411,9 @@ Tipo: Array de bytes
 Tamaño: 3 bytes
 
 Estructura:
-  Byte 0: Minerales recolectados (0-2)
-  Byte 1: Maderas recolectadas (0-2)
-  Byte 2: Frutas recolectadas (0-2)
+  Byte 0: Piedras recolectadas (0-15)
+  Byte 1: Maderas recolectadas (0-15)
+  Byte 2: Frutas recolectadas (0-15)
 
 4.4 JUGADOR
 -----------
@@ -581,7 +581,7 @@ Entrada: Posición del jugador (JX, JY)
 Salida: Actualización de inventario y puntos
 
 Algoritmo:
-FOR cada recurso I de 0 a 14:
+FOR cada recurso I de 0 a 44:
   SI RECURSOS[I].Activo = 1 ENTONCES:
     RX ← RECURSOS[I].X
     RY ← RECURSOS[I].Y
@@ -612,7 +612,7 @@ FOR cada recurso I de 0 a 14:
   FIN SI
 FIN FOR
 
-Complejidad: O(n) donde n = 15 (número de recursos)
+Complejidad: O(n) donde n = 45 (número de recursos)
 
 7.4 VERIFICACIÓN DE VICTORIA
 -----------------------------
@@ -627,9 +627,9 @@ Algoritmo:
   RETORNAR VERDADERO
 
 Valores objetivo:
-  OBJETIVO[0] = 2  ; 2 minerales
-  OBJETIVO[1] = 2  ; 2 maderas
-  OBJETIVO[2] = 2  ; 2 frutas
+  OBJETIVO[0] = 15  ; 15 piedras
+  OBJETIVO[1] = 15  ; 15 maderas
+  OBJETIVO[2] = 15  ; 15 frutas
 
 7.5 RENDERIZADO DEL MAPA
 -------------------------
@@ -712,11 +712,11 @@ En DOSBox (cycles=3000):
 8.4 USO DE MEMORIA
 ------------------
 Código (.CODE): ~5-8 KB
-Datos (.DATA): ~2 KB
+Datos (.DATA): ~2.5 KB
 Pila (.STACK): 256 bytes
 Video: 112 KB (modo EGA)
 
-Total: ~120 KB (muy por debajo del límite de 640 KB)
+Total: ~122 KB (muy por debajo del límite de 640 KB)
 
 ===============================================================================
                             FIN DE DOCUMENTO

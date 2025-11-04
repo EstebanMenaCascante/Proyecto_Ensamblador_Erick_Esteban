@@ -2,10 +2,11 @@
 
 
 .DATA
-    ; Mapa (ahora 40x21 = 840 bytes para ocupar toda la pantalla EGA)
+    ; Mapa (ahora 40x21 = 840 bytes para ocupar pantalla EGA)
     MAPA_ANCHO DW ?
     MAPA_ALTO DW ?
     MAPA_DATOS DB 840 DUP(?)
+    MAPA_CARGADO DB 0       ; Flag para saber si el mapa ya fue generado
     NOMBRE_ARCHIVO DB 'mapa.txt', 0
     CARACTER_TEMP DB ?
     
@@ -19,15 +20,15 @@
 
 .CODE
 
-; CARGAR MAPA (ahora genera aleatoriamente)
+; CARGAR MAPA (solo genera una vez, luego se mantiene fijo)
 
 CARGAR_MAPA PROC
+    ; Verificar si el mapa ya fue generado
+    CMP MAPA_CARGADO, 1
+    JE MAPA_YA_EXISTE
+    
     ; Establecer dimensiones para modo EGA 640x350
-    ; Usar tiles más grandes para aprovechar la pantalla
-    ; 640 pixels / 32 = 20 columnas (tiles de 32x32)
-    ; 320 pixels / 16 = 20 filas (tiles de 16x16)
-    ; O mantener 20x15 con tiles de 32x23 para llenar mejor
-    ; Por ahora usamos 40x21 con tiles de 16x16 = 640x336
+    ; 40 columnas x 21 filas con tiles de 16x16 = 640x336
     MOV MAPA_ANCHO, 40
     MOV MAPA_ALTO, 21
     
@@ -39,11 +40,114 @@ CARGAR_MAPA PROC
     ADD AX, CX      ; Agregar minutos y horas
     MOV SEMILLA, AX
     
-    ; Generar mapa aleatorio
+    ; Generar mapa aleatorio (solo la primera vez)
     CALL GENERAR_MAPA_ALEATORIO
     
+    ; Marcar como cargado
+    MOV BYTE PTR MAPA_CARGADO, 1
+    
+MAPA_YA_EXISTE:
     RET
 CARGAR_MAPA ENDP
+
+
+; LEER MAPA DESDE ARCHIVO
+
+LEER_MAPA_DESDE_ARCHIVO PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    ; Abrir archivo
+    MOV AH, 3DH
+    MOV AL, 0           ; Modo lectura
+    LEA DX, NOMBRE_ARCHIVO
+    INT 21H
+    JC ERROR_ABRIR
+    
+    MOV BX, AX          ; Handle del archivo
+    
+    ; Saltar primera línea (dimensiones)
+SALTAR_PRIMERA_LINEA:
+    MOV AH, 3FH
+    MOV CX, 1
+    LEA DX, CARACTER_TEMP
+    INT 21H
+    JC ERROR_LEER
+    
+    CMP CARACTER_TEMP, 10   ; Salto de línea
+    JNE SALTAR_PRIMERA_LINEA
+    
+    ; Leer mapa línea por línea
+    MOV SI, 0           ; Índice en MAPA_DATOS
+    
+LEER_LINEA:
+    CMP SI, 300         ; 20x15 = 300 tiles
+    JAE FIN_LECTURA
+    
+LEER_CARACTER:
+    MOV AH, 3FH
+    MOV CX, 1
+    LEA DX, CARACTER_TEMP
+    INT 21H
+    JC ERROR_LEER
+    
+    ; Verificar fin de archivo
+    CMP AX, 0
+    JE FIN_LECTURA
+    
+    ; Si es espacio o salto de línea, ignorar
+    CMP CARACTER_TEMP, ' '
+    JE LEER_CARACTER
+    CMP CARACTER_TEMP, 10
+    JE LEER_CARACTER
+    CMP CARACTER_TEMP, 13
+    JE LEER_CARACTER
+    
+    ; Si es 'R', terminamos el mapa (empieza sección de recursos)
+    CMP CARACTER_TEMP, 'R'
+    JE FIN_LECTURA
+    
+    ; Convertir ASCII a número (0-3)
+    MOV AL, CARACTER_TEMP
+    SUB AL, '0'
+    
+    ; Guardar en mapa
+    MOV MAPA_DATOS[SI], AL
+    INC SI
+    JMP LEER_CARACTER
+    
+FIN_LECTURA:
+    ; Cerrar archivo
+    MOV AH, 3EH
+    INT 21H
+    
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+    
+ERROR_ABRIR:
+ERROR_LEER:
+    ; Si hay error, llenar con tierra
+    MOV SI, 0
+    MOV CX, 300
+LLENAR_TIERRA_ERROR:
+    MOV MAPA_DATOS[SI], 0
+    INC SI
+    LOOP LLENAR_TIERRA_ERROR
+    
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+LEER_MAPA_DESDE_ARCHIVO ENDP
 
 
 ; GENERAR MAPA ALEATORIO JUGABLE
@@ -67,15 +171,15 @@ LLENAR_TIERRA:
     ; CALL CREAR_BORDES  ; Comentado para ocupar toda la ventana
     
     ; 3. Colocar menos obstáculos de piedra
-    MOV CONTADOR_OBSTACULOS, 7      ; 7 grupos de piedras (reducido)
+    MOV CONTADOR_OBSTACULOS, 7      ; 7 grupos de piedras
     CALL COLOCAR_OBSTACULOS_PIEDRA
     
     ; 4. Colocar menos obstáculos de agua
-    MOV CONTADOR_OBSTACULOS, 4      ; 4 grupos de agua (reducido)
+    MOV CONTADOR_OBSTACULOS, 4      ; 4 grupos de agua
     CALL COLOCAR_OBSTACULOS_AGUA
     
     ; 5. Colocar hierba decorativa
-    MOV CONTADOR_OBSTACULOS, 35     ; Más hierba para el mapa más grande
+    MOV CONTADOR_OBSTACULOS, 35     ; Hierba para decorar
     CALL COLOCAR_HIERBA
     
     POP SI
@@ -256,7 +360,7 @@ SIGUIENTE_GRUPO_AGUA:
     
     CALL NUMERO_ALEATORIO
     MOV DX, 0
-    MOV BX, 19
+    MOV BX, 19          ; Alto útil (21-2)
     DIV BX
     ADD DX, 1
     MOV BX, DX
@@ -331,7 +435,7 @@ SIGUIENTE_HIERBA:
     
     CALL NUMERO_ALEATORIO
     MOV DX, 0
-    MOV BX, 19
+    MOV BX, 19          ; Alto útil (21-2)
     DIV BX
     ADD DX, 1
     MOV BX, DX

@@ -3,7 +3,7 @@
 
 .DATA
     JUGADOR_X DW 320        ; Centro horizontal de 640
-    JUGADOR_Y DW 160        ; Centro vertical de 336
+    JUGADOR_Y DW 160        ; Centro vertical para mapa 21 filas
     JUGADOR_X_ANTERIOR DW 320
     JUGADOR_Y_ANTERIOR DW 160
     DIRECCION DB 0
@@ -14,7 +14,7 @@
 
 INICIALIZAR_JUGADOR PROC
     MOV JUGADOR_X, 320          ; Centro de 640
-    MOV JUGADOR_Y, 160          ; Centro de 336
+    MOV JUGADOR_Y, 160          ; Centro de mapa 21 filas
     MOV JUGADOR_X_ANTERIOR, 320
     MOV JUGADOR_Y_ANTERIOR, 160
     MOV DIRECCION, 0
@@ -171,16 +171,27 @@ VERIFICAR_COLISION PROC
     ADD AX, SI
     MOV BX, AX
     
-   
+    ; Verificar si está en agua (tipo 2) - GAME OVER
+    CMP BYTE PTR MAPA_DATOS[BX], 2
+    JE AGUA_DETECTADA
+
+    ; Verificar colisiones normales (piedra, árboles)
     CMP BYTE PTR MAPA_DATOS[BX], 1
     JE COLISION_DETECTADA
-    CMP BYTE PTR MAPA_DATOS[BX], 2
+    CMP BYTE PTR MAPA_DATOS[BX], 4      ; Árboles también tienen colisión
     JE COLISION_DETECTADA
     
     CLC
     RET
     
+AGUA_DETECTADA:
+    ; Setear flag especial para GAME OVER
+    MOV AL, 2           ; Código especial: 2 = muerte por agua
+    STC
+    RET
+    
 COLISION_DETECTADA:
+    MOV AL, 1           ; Código normal: 1 = colisión bloqueante
     STC
     RET
 VERIFICAR_COLISION ENDP

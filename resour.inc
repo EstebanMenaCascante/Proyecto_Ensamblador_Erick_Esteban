@@ -3,18 +3,26 @@
 
 .DATA
     ; Recursos (X, Y, Tipo, Activo) - cada recurso usa 8 bytes
-    NUM_RECURSOS EQU 15
-    RECURSOS DW 15 DUP(0, 0, 0, 1)  ; X, Y, Tipo, Activo
+    NUM_RECURSOS EQU 45
+    RECURSOS DW 45 DUP(0, 0, 0, 1)  ; X, Y, Tipo, Activo
+    
+    ; Copia de respaldo de recursos para reiniciar el juego
+    RECURSOS_BACKUP DW 45 DUP(0, 0, 0, 1)
+    RECURSOS_CARGADOS DB 0  ; Flag para saber si ya fueron generados
     
     ; Inventario
     INVENTARIO DB 3 DUP(0)
-    OBJETIVO DB 2, 2, 2
+    OBJETIVO DB 15, 15, 15
 
 .CODE
 
-; CARGAR RECURSOS (ahora aleatorio)
+; CARGAR RECURSOS (solo la primera vez, luego se mantienen fijos)
 
 CARGAR_RECURSOS PROC
+    ; Verificar si los recursos ya fueron generados
+    CMP BYTE PTR RECURSOS_CARGADOS, 1
+    JE RECURSOS_YA_EXISTEN
+    
     PUSH AX
     PUSH BX
     PUSH CX
@@ -25,8 +33,8 @@ CARGAR_RECURSOS PROC
     MOV SI, 0               ; Índice en array de recursos
     MOV DI, 0               ; Contador de recursos colocados
     
-    ; Colocar 5 minerales (tipo 1)
-    MOV CX, 5
+    ; Colocar 15 minerales (tipo 1)
+    MOV CX, 15
 COLOCAR_MINERALES:
     PUSH CX
     MOV BX, 1               ; Tipo mineral
@@ -34,8 +42,8 @@ COLOCAR_MINERALES:
     POP CX
     LOOP COLOCAR_MINERALES
     
-    ; Colocar 5 maderas (tipo 2)
-    MOV CX, 5
+    ; Colocar 15 maderas (tipo 2)
+    MOV CX, 15
 COLOCAR_MADERAS:
     PUSH CX
     MOV BX, 2               ; Tipo madera
@@ -43,8 +51,8 @@ COLOCAR_MADERAS:
     POP CX
     LOOP COLOCAR_MADERAS
     
-    ; Colocar 5 frutas (tipo 3)
-    MOV CX, 5
+    ; Colocar 15 frutas (tipo 3)
+    MOV CX, 15
 COLOCAR_FRUTAS:
     PUSH CX
     MOV BX, 3               ; Tipo fruta
@@ -52,14 +60,88 @@ COLOCAR_FRUTAS:
     POP CX
     LOOP COLOCAR_FRUTAS
     
+    ; Guardar copia de respaldo para poder reiniciar
+    CALL GUARDAR_RECURSOS_BACKUP
+    
+    ; Marcar como cargados
+    MOV BYTE PTR RECURSOS_CARGADOS, 1
+    
     POP DI
     POP SI
     POP DX
     POP CX
     POP BX
     POP AX
+    
+RECURSOS_YA_EXISTEN:
     RET
 CARGAR_RECURSOS ENDP
+
+
+; GUARDAR COPIA DE RESPALDO DE RECURSOS
+
+GUARDAR_RECURSOS_BACKUP PROC
+    PUSH AX
+    PUSH CX
+    PUSH SI
+    PUSH DI
+    
+    ; Copiar RECURSOS a RECURSOS_BACKUP
+    MOV SI, OFFSET RECURSOS
+    MOV DI, OFFSET RECURSOS_BACKUP
+    MOV CX, 180             ; 45 recursos * 4 words = 180 words
+    CLD
+    REP MOVSW
+    
+    POP DI
+    POP SI
+    POP CX
+    POP AX
+    RET
+GUARDAR_RECURSOS_BACKUP ENDP
+
+
+; RESTAURAR RECURSOS DESDE RESPALDO
+
+RESTAURAR_RECURSOS_BACKUP PROC
+    PUSH AX
+    PUSH CX
+    PUSH SI
+    PUSH DI
+    
+    ; Copiar RECURSOS_BACKUP a RECURSOS
+    MOV SI, OFFSET RECURSOS_BACKUP
+    MOV DI, OFFSET RECURSOS
+    MOV CX, 180             ; 45 recursos * 4 words = 180 words
+    CLD
+    REP MOVSW
+    
+    POP DI
+    POP SI
+    POP CX
+    POP AX
+    RET
+RESTAURAR_RECURSOS_BACKUP ENDP
+
+
+; REINICIAR INVENTARIO Y PUNTUACION
+
+REINICIAR_INVENTARIO PROC
+    PUSH AX
+    PUSH SI
+    
+    MOV SI, 0
+    MOV BYTE PTR INVENTARIO[SI], 0
+    MOV BYTE PTR INVENTARIO[SI+1], 0
+    MOV BYTE PTR INVENTARIO[SI+2], 0
+    
+    ; Resetear puntuación también
+    MOV WORD PTR PUNTUACION_HUD, 0
+    
+    POP SI
+    POP AX
+    RET
+REINICIAR_INVENTARIO ENDP
 
 
 ; GENERAR POSICIÓN ALEATORIA PARA UN RECURSO
@@ -138,7 +220,7 @@ VERIFICAR_POSICION_RECURSO_VALIDA PROC
     MUL CX
     ADD AX, BX
     
-    ; Verificar límites
+    ; Verificar límites (mapa es 40x21 = 840 tiles)
     CMP AX, 840
     JAE POSICION_INVALIDA
     
@@ -240,11 +322,11 @@ DIBUJAR_UN_RECURSO PROC
     PUSH DI
     
     ; Elegir color según tipo
-    MOV AL, COLOR_AMARILLO  ; Por defecto mineral
+    MOV AL, COLOR_GRIS      ; Por defecto mineral (gris)
     
     CMP DI, 2
     JNE NO_ES_MADERA
-    MOV AL, COLOR_MARRON    ; Madera
+    MOV AL, 11              ; Madera (cyan/aguamarina, color único)
     JMP SHORT TIENE_COLOR_REC
     
 NO_ES_MADERA:
@@ -368,6 +450,13 @@ POSITIVO_Y:
     ; Actualizar inventario
     DEC BX
     INC INVENTARIO[BX]
+    
+    ; Actualizar HUD después de recolectar
+    PUSH SI
+    PUSH CX
+    CALL DIBUJAR_HUD_COMPLETO
+    POP CX
+    POP SI
     
 SIGUIENTE_RECOLECCION:
     ADD SI, 8

@@ -42,16 +42,16 @@ FECHA: Noviembre 2025
     └─ Almacenamiento de posición anterior
 
 [✓] 5. SISTEMA DE RECURSOS (resour.inc)
-    ├─ 15 recursos totales distribuidos:
-    │  • 5 Minerales (gris) - 10 puntos c/u
-    │  • 5 Maderas (marrón) - 15 puntos c/u
-    │  • 5 Frutas (rojas) - 20 puntos c/u
+    ├─ 45 recursos totales distribuidos:
+    │  • 15 Piedras (gris) - 10 puntos c/u
+    │  • 15 Maderas (marrón) - 15 puntos c/u
+    │  • 15 Frutas (rojas) - 20 puntos c/u
     ├─ Generación aleatoria de posiciones válidas
     ├─ Verificación anti-spawn en obstáculos
     ├─ Sistema de activación/desactivación
     ├─ Detección de colisión con jugador
     ├─ Inventario de 3 tipos de recursos
-    └─ Objetivo: 2 de cada tipo (6 total)
+    └─ Objetivo: 15 de cada tipo (45 total)
 
 [✓] 6. SISTEMA DE ENTRADA (input.inc)
     ├─ Lectura no bloqueante de teclado
@@ -60,47 +60,69 @@ FECHA: Noviembre 2025
     └─ Respuesta inmediata
 
 [✓] 7. SISTEMA DE HUD (hud.inc) ⭐ NUEVO
-    ├─ Barra superior de 640×30 pixels
+    ├─ Panel en esquina superior derecha (150×80 pixels)
     ├─ Iconos visuales de cada recurso
     ├─ Contador de inventario (recolectado/objetivo)
+    │  • Piedras: XX/15
+    │  • Maderas: XX/15
+    │  • Frutas: XX/15
+    │  • Total: XX/45
     ├─ Sistema de puntuación visible
     ├─ Actualización en tiempo real
     └─ Colores distintivos por recurso
 
-[✓] 8. SISTEMA DE PUNTUACIÓN (hud.inc) ⭐ NUEVO
+[✓] 8. INVENTARIO DETALLADO (hud.inc) ⭐ NUEVO
+    ├─ Se abre con tecla E
+    ├─ Pantalla completa con fondo azul
+    ├─ Muestra estadísticas detalladas:
+    │  • Piedras recolectadas: XX/15
+    │  • Maderas recolectadas: XX/15
+    │  • Frutas recolectadas: XX/15
+    │  • Total: XX/45
+    │  • Puntuación actual
+    ├─ Se cierra con tecla E
+    └─ Vuelve al juego automáticamente
+
+[✓] 9. SISTEMA DE PUNTUACIÓN (hud.inc) ⭐ NUEVO
     ├─ Puntos por tipo de recurso:
-    │  • Mineral: 10 puntos
+    │  • Piedra: 10 puntos
     │  • Madera: 15 puntos
     │  • Fruta: 20 puntos
     ├─ Acumulación automática al recolectar
-    ├─ Visualización en HUD
+    ├─ Visualización en HUD y en inventario
     ├─ Mostrar en pantalla de victoria
-    └─ Puntuación máxima: 90 puntos
+    └─ Puntuación máxima: 675 puntos
 
-[✓] 9. SISTEMA DE SONIDO (sound.inc) ⭐ NUEVO
+[✓] 10. SISTEMA DE SONIDO (sound.inc) ⭐ NUEVO
     ├─ Beep al recolectar recursos (1000 Hz)
     ├─ Melodía de victoria (Do-Mi-Sol)
     ├─ Uso del PC Speaker
     ├─ Frecuencias calculadas matemáticamente
     └─ Delays precisos con INT 15h
 
-[✓] 10. EFECTOS VISUALES (effects.inc) ⭐ NUEVO
+[✓] 11. EFECTOS VISUALES (effects.inc) ⭐ NUEVO
     ├─ Partículas al recolectar recursos
     ├─ Círculo de 8 puntos amarillos
     ├─ Efecto de parpadeo (preparado)
     └─ Sistema de fade-in (preparado)
 
-[✓] 11. PANTALLA DE VICTORIA MEJORADA (GAME.asm) ⭐ NUEVO
-    ├─ Vuelve a modo texto con estilo
-    ├─ Fondo verde de celebración
+[✓] 12. PANTALLA DE VICTORIA MEJORADA (GAME.asm) ⭐ NUEVO
+    ├─ Animación de parpadeo de colores (azul/verde)
+    ├─ ASCII art "VICTORIA!" línea por línea
+    ├─ Fondo verde con texto amarillo
     ├─ Mensaje de felicitación
-    ├─ Muestra puntuación final numérica
+    ├─ Estadísticas completas:
+    │  • Piedras: 15/15
+    │  • Maderas: 15/15
+    │  • Frutas: 15/15
+    │  • Total: 45/45
+    ├─ Muestra puntuación final (hasta 675 pts)
     ├─ Conversión de número a string
     └─ Espera tecla para salir
 
 [✓] 12. CONDICIÓN DE VICTORIA (resour.inc)
     ├─ Verifica inventario vs objetivo
-    ├─ Compara 3 tipos de recursos
+    ├─ Compara 3 tipos de recursos (15 de cada uno)
     ├─ Retorna bandera AL=1 si gana
     └─ Activa secuencia de victoria
 
@@ -193,14 +215,15 @@ OPCIÓN 3: En DOSBox
 1. Ejecuta GAME.exe
 2. Lee las instrucciones en la pantalla de inicio
 3. Presiona cualquier tecla para comenzar
-4. Usa W/A/S/D para moverte
+4. Usa W, A, S, D para moverte
 5. Camina sobre los recursos para recolectarlos
    - Escucharás un beep y verás partículas
-6. Observa tu progreso en el HUD superior
-7. Recolecta 2 de cada tipo (6 recursos totales)
-8. ¡Gana el juego con la mayor puntuación!
+6. Presiona E para ver tu inventario detallado
+7. Observa el HUD en la esquina superior derecha
+8. Recolecta los 45 recursos (15 de cada tipo)
+9. ¡Gana el juego con la mayor puntuación!
 
-Puntuación máxima: 90 puntos
+Puntuación máxima: 675 puntos
 
 ═══════════════════════════════════════════════════════════════════════════
 

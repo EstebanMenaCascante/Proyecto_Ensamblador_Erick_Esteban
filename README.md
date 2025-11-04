@@ -16,22 +16,25 @@ Juego de exploración en 2D donde el jugador debe recolectar recursos distribuid
 - ✅ Modo gráfico EGA 640x350 pixels
 - ✅ Mapa generado aleatoriamente con obstáculos
 - ✅ Sistema de colisiones
-- ✅ Recolección de 3 tipos de recursos
+- ✅ Recolección de 3 tipos de recursos (45 totales)
 - ✅ Sistema de puntuación
-- ✅ HUD con inventario visible
+- ✅ HUD en tiempo real en esquina superior derecha
+- ✅ Inventario detallado (tecla E)
 - ✅ Efectos de sonido (PC Speaker)
-- ✅ Pantalla de victoria con estadísticas
+- ✅ Efectos visuales al recolectar
+- ✅ Pantalla de victoria animada con estadísticas
 
 ---
 
 ## 🎯 Objetivo del Juego
 
 Recolecta **todos los recursos** disponibles en el mapa:
-- 🔘 **2 Minerales** (Gris) - 10 puntos c/u
-- 🟫 **2 Maderas** (Marrón) - 15 puntos c/u
-- 🔴 **2 Frutas** (Rojo) - 20 puntos c/u
+- 🔘 **15 Piedras (Minerales)** (Gris) - 10 puntos c/u
+- 🟫 **15 Maderas** (Marrón) - 15 puntos c/u
+- 🔴 **15 Frutas** (Rojo) - 20 puntos c/u
 
-**Puntuación máxima:** 90 puntos
+**Total de recursos:** 45  
+**Puntuación máxima:** 675 puntos (150 + 225 + 300)
 
 ---
 
@@ -43,6 +46,7 @@ Recolecta **todos los recursos** disponibles en el mapa:
 | **S** | Mover abajo |
 | **A** | Mover izquierda |
 | **D** | Mover derecha |
+| **E** | Abrir/Cerrar inventario detallado |
 | **ESC** | Salir del juego |
 
 ---
@@ -143,11 +147,12 @@ El juego utiliza el **PC Speaker** para reproducir sonidos:
 
 ## 🏆 Sistema de Puntuación
 
-| Recurso | Puntos |
-|---------|--------|
-| Mineral | 10 pts |
-| Madera  | 15 pts |
-| Fruta   | 20 pts |
+| Recurso | Cantidad | Puntos Unitarios | Total |
+|---------|----------|------------------|-------|
+| Piedra  | 15       | 10 pts          | 150 pts |
+| Madera  | 15       | 15 pts          | 225 pts |
+| Fruta   | 15       | 20 pts          | 300 pts |
+| **TOTAL** | **45** | -               | **675 pts** |
 
 **Estrategia:** Prioriza recolectar frutas para maximizar tu puntuación.
 
@@ -224,15 +229,6 @@ Este proyecto es de uso educativo para el curso de Arquitectura de Computadoras.
 - [ ] Animaciones del jugador
 - [ ] Power-ups temporales
 - [ ] Mini-mapa
-
----
-
-## 📞 Contacto
-
-Para reportar bugs o sugerencias:
-- **Erick:** [email]
-- **Esteban:** [email]
-
 ---
 
 **¡Disfruta el juego y obtén la puntuación más alta!** 🎮🏆
