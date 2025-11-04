@@ -1,17 +1,5 @@
 DOSBox version 0.74-3
 Copyright 2002-2019 DOSBox Team, published under GNU GPL.
 ---
-CONFIG:Loading primary settings from config file C:\Users\emena\AppData\Local\Temp\asm8086_7rqadhm2\dosbox.conf
+CONFIG:Loading primary settings from config file C:\Users\emena\AppData\Local\Temp\asm8086_nqzkp7v5\dosbox.conf
 MIDI:Opened device:win32
-Illegal read from 1000000, CS:IP     f000:    11c4
-Illegal write to 1000000, CS:IP     f000:    11c4
-Illegal read from 1000001, CS:IP     f000:    11c4
-Illegal write to 1000001, CS:IP     f000:    11c4
-Illegal write to 1000000, CS:IP     f000:    11c4
-Illegal write to 1000001, CS:IP     f000:    11c4
-Illegal write to 1000000, CS:IP     f000:    11c4
-Illegal write to 1000001, CS:IP     f000:    11c4
-Illegal read from 1000000, CS:IP     f000:    11c4
-Illegal read from 1000001, CS:IP     f000:    11c4
-Illegal read from 1000000, CS:IP     f000:    11c4
-Illegal read from 1000001, CS:IP     f000:    11c4

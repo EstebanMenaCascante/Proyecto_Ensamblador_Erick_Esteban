@@ -50,8 +50,11 @@ MAIN PROC
     MOV AX, @DATA
     MOV DS, AX
     
-    ; Mostrar pantalla de inicio
+    ; Mostrar pantalla de inicio primero
     CALL MOSTRAR_MENU_INICIO
+    
+    ; AHORA reproducir música EN LOOP mientras espera
+    ; (la música tiene verificación de tecla interna y sale cuando presionas algo)
     
     ; Iniciar modo gráfico
     CALL INICIAR_MODO_GRAFICO
@@ -108,9 +111,6 @@ BUCLE_JUEGO:
     JMP BUCLE_JUEGO
     
 VICTORIA:
-    ; Reproducir sonido de victoria
-    CALL SONIDO_VICTORIA
-    
     ; Pantalla de victoria mejorada (ya incluye espera de tecla)
     CALL PANTALLA_VICTORIA
     
@@ -271,6 +271,9 @@ PARPADEO_COLORES:
     LEA DX, FELICITACION
     INT 21H
     
+    ; Reproducir música de victoria (después de mostrar pantalla)
+    CALL SONIDO_VICTORIA
+    
     ; === ESTADISTICAS (Animadas) ===
     
     ; Piedras
@@ -401,6 +404,22 @@ PARPADEO_COLORES:
     LEA DX, PRESIONA_CONTINUAR
     INT 21H
     
+    ; Delay antes de esperar tecla
+    MOV CX, 0
+    MOV DX, 5000
+    MOV AH, 86H
+    INT 15H
+    
+    ; Limpiar buffer de teclado
+LIMPIAR_BUFFER_VICTORIA:
+    MOV AH, 01H
+    INT 16H
+    JZ BUFFER_LIMPIO_VICTORIA
+    MOV AH, 00H
+    INT 16H
+    JMP LIMPIAR_BUFFER_VICTORIA
+    
+BUFFER_LIMPIO_VICTORIA:
     ; Esperar tecla
     MOV AH, 00H
     INT 16H
@@ -628,6 +647,9 @@ PARPADEO_ROJO:
     MOV AH, 09H
     LEA DX, MENSAJE_AHOGADO
     INT 21H
+    
+    ; Reproducir música de derrota (después de mostrar pantalla)
+    CALL MUSICA_GAME_OVER
     
     ; Mensaje: Preguntar si desea reintentar
     MOV AH, 02H

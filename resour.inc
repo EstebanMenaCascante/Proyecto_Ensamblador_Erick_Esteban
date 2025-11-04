@@ -321,56 +321,31 @@ DIBUJAR_UN_RECURSO PROC
     PUSH SI
     PUSH DI
     
-    ; Elegir color según tipo
-    MOV AL, COLOR_GRIS      ; Por defecto mineral (gris)
-    
-    CMP DI, 2
-    JNE NO_ES_MADERA
-    MOV AL, 11              ; Madera (cyan/aguamarina, color único)
-    JMP SHORT TIENE_COLOR_REC
-    
-NO_ES_MADERA:
-    CMP DI, 3
-    JNE TIENE_COLOR_REC
-    MOV AL, COLOR_ROJO      ; Fruta
-
-TIENE_COLOR_REC:
-    ; Guardar datos del recurso
-    MOV TILE_COLOR, AL
+    ; Guardar posición
     MOV TILE_X, BX
     MOV TILE_Y, DX
     
-    MOV DI, 0  ; Fila (0-7)
+    ; Dibujar según tipo de recurso
+    CMP DI, 1
+    JE DIBUJAR_PIEDRA_REC
+    CMP DI, 2
+    JE DIBUJAR_MADERA_REC
+    CMP DI, 3
+    JE DIBUJAR_FRUTA_REC
+    JMP FIN_DIBUJAR_RECURSO
     
-FILA_REC:
-    CMP DI, 8
-    JAE FIN_REC
+DIBUJAR_PIEDRA_REC:
+    CALL DIBUJAR_SPRITE_PIEDRA
+    JMP FIN_DIBUJAR_RECURSO
     
-    MOV SI, 0  ; Columna (0-7)
+DIBUJAR_MADERA_REC:
+    CALL DIBUJAR_SPRITE_ARBOL
+    JMP FIN_DIBUJAR_RECURSO
     
-COLUMNA_REC:
-    CMP SI, 8
-    JAE FIN_FILA_REC
+DIBUJAR_FRUTA_REC:
+    CALL DIBUJAR_SPRITE_FRUTA
     
-    ; Calcular posición del pixel
-    MOV DX, TILE_Y
-    ADD DX, DI       ; Y = Y_recurso + fila
-    
-    MOV CX, TILE_X
-    ADD CX, SI       ; X = X_recurso + columna
-    
-    ; Dibujar pixel usando función rápida
-    MOV AL, TILE_COLOR
-    CALL ESCRIBIR_PIXEL
-    
-    INC SI
-    JMP COLUMNA_REC
-    
-FIN_FILA_REC:
-    INC DI
-    JMP FILA_REC
-    
-FIN_REC:
+FIN_DIBUJAR_RECURSO:
     POP DI
     POP SI
     POP DX
@@ -491,3 +466,221 @@ NO_VICTORIA:
     MOV AL, 0  ; No victoria
     RET
 VERIFICAR_VICTORIA ENDP
+
+
+; ============ SPRITES DE RECURSOS (8x8) ============
+
+; SPRITE DE PIEDRA (8x8)
+DIBUJAR_SPRITE_PIEDRA PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV SI, 0
+FILA_PIEDRA_REC:
+    CMP SI, 8
+    JAE FIN_PIEDRA_REC
+    
+    MOV BX, 0
+COL_PIEDRA_REC:
+    CMP BX, 8
+    JAE FIN_FILA_PIEDRA_REC
+    
+    MOV DX, TILE_Y
+    ADD DX, SI
+    MOV CX, TILE_X
+    ADD CX, BX
+    
+    ; Piedra gris con textura
+    MOV AL, 7  ; Gris claro
+    
+    ; Bordes oscuros
+    CMP SI, 0
+    JE BORDE_PIEDRA_REC
+    CMP SI, 7
+    JE BORDE_PIEDRA_REC
+    CMP BX, 0
+    JE BORDE_PIEDRA_REC
+    CMP BX, 7
+    JNE NO_BORDE_PIEDRA_REC
+BORDE_PIEDRA_REC:
+    MOV AL, 8  ; Gris oscuro
+    JMP PIXEL_PIEDRA_REC
+    
+NO_BORDE_PIEDRA_REC:
+    ; Centro más claro
+    CMP SI, 3
+    JB PIXEL_PIEDRA_REC
+    CMP SI, 5
+    JA PIXEL_PIEDRA_REC
+    CMP BX, 3
+    JB PIXEL_PIEDRA_REC
+    CMP BX, 5
+    JA PIXEL_PIEDRA_REC
+    MOV AL, COLOR_BLANCO
+    
+PIXEL_PIEDRA_REC:
+    CALL ESCRIBIR_PIXEL
+    
+    INC BX
+    JMP COL_PIEDRA_REC
+    
+FIN_FILA_PIEDRA_REC:
+    INC SI
+    JMP FILA_PIEDRA_REC
+    
+FIN_PIEDRA_REC:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_SPRITE_PIEDRA ENDP
+
+
+; SPRITE DE PALOS DE MADERA (8x8)
+DIBUJAR_SPRITE_ARBOL PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV SI, 0
+FILA_ARBOL_REC:
+    CMP SI, 8
+    JAE FIN_ARBOL_REC
+    
+    MOV BX, 0
+COL_ARBOL_REC:
+    CMP BX, 8
+    JAE FIN_FILA_ARBOL_REC
+    
+    MOV DX, TILE_Y
+    ADD DX, SI
+    MOV CX, TILE_X
+    ADD CX, BX
+    
+    ; Palos de madera (2 palos verticales)
+    MOV AL, 6  ; Café para madera
+    
+    ; Palo izquierdo (columnas 2-3)
+    CMP BX, 2
+    JB NO_DIBUJAR_ARBOL_REC
+    CMP BX, 4
+    JB PIXEL_ARBOL_REC
+    
+    ; Palo derecho (columnas 5-6)
+    CMP BX, 5
+    JB NO_DIBUJAR_ARBOL_REC
+    CMP BX, 7
+    JA NO_DIBUJAR_ARBOL_REC
+    
+PIXEL_ARBOL_REC:
+    CALL ESCRIBIR_PIXEL
+    
+NO_DIBUJAR_ARBOL_REC:
+    INC BX
+    JMP COL_ARBOL_REC
+    
+FIN_FILA_ARBOL_REC:
+    INC SI
+    JMP FILA_ARBOL_REC
+    
+FIN_ARBOL_REC:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_SPRITE_ARBOL ENDP
+
+
+; SPRITE DE FRUTA/MANZANA (8x8)
+DIBUJAR_SPRITE_FRUTA PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV SI, 0
+FILA_FRUTA_REC:
+    CMP SI, 8
+    JAE FIN_FRUTA_REC
+    
+    MOV BX, 0
+COL_FRUTA_REC:
+    CMP BX, 8
+    JAE FIN_FILA_FRUTA_REC
+    
+    MOV DX, TILE_Y
+    ADD DX, SI
+    MOV CX, TILE_X
+    ADD CX, BX
+    
+    ; Manzana redonda roja
+    MOV AL, COLOR_ROJO
+    
+    ; Forma de manzana (redonda)
+    CMP SI, 0
+    JE BORDE_FRUTA
+    CMP SI, 7
+    JE BORDE_FRUTA
+    JMP NO_BORDE_FRUTA
+BORDE_FRUTA:
+    CMP BX, 2
+    JB NO_DIBUJAR_FRUTA
+    CMP BX, 6
+    JA NO_DIBUJAR_FRUTA
+    JMP PIXEL_FRUTA
+    
+NO_BORDE_FRUTA:
+    CMP BX, 1
+    JB NO_DIBUJAR_FRUTA
+    CMP BX, 7
+    JA NO_DIBUJAR_FRUTA
+    
+    ; Brillo en la manzana (arriba izquierda)
+    CMP SI, 2
+    JNE NO_BRILLO_FRUTA
+    CMP BX, 3
+    JNE NO_BRILLO_FRUTA
+    MOV AL, COLOR_BLANCO
+    JMP PIXEL_FRUTA
+    
+NO_BRILLO_FRUTA:
+    ; Tallo (parte superior)
+    CMP SI, 1
+    JA PIXEL_FRUTA
+    CMP BX, 4
+    JNE NO_DIBUJAR_FRUTA
+    MOV AL, 6  ; Café (tallo)
+    JMP PIXEL_FRUTA
+    
+NO_DIBUJAR_FRUTA:
+    INC BX
+    JMP COL_FRUTA_REC
+    
+PIXEL_FRUTA:
+    CALL ESCRIBIR_PIXEL
+    
+    INC BX
+    JMP COL_FRUTA_REC
+    
+FIN_FILA_FRUTA_REC:
+    INC SI
+    JMP FILA_FRUTA_REC
+    
+FIN_FRUTA_REC:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_SPRITE_FRUTA ENDP

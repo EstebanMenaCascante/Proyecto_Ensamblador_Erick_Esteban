@@ -127,50 +127,57 @@ FIN_MAPA_COMPLETO:
 DIBUJAR_MAPA_COMPLETO ENDP
 
 
-; OBTENER COLOR Y DIBUJAR TILE
+; OBTENER COLOR Y DIBUJAR TILE CON SPRITE/TEXTURA
 ; BL = tipo de tile, DI = columna, BP = fila
 
 OBTENER_COLOR_Y_DIBUJAR_TILE PROC
     PUSH AX
     PUSH BX
     
-    ; Elegir color según tipo de tile
-    MOV AL, COLOR_MARRON    ; Tierra (marrón)
-    
-    CMP BL, 1
-    JNE VERIFICAR_AGUA
-    MOV AL, COLOR_GRIS      ; Piedra
-    JMP SHORT TIENE_COLOR
-    
-VERIFICAR_AGUA:
-    CMP BL, 2
-    JNE VERIFICAR_HIERBA
-    MOV AL, COLOR_AZUL      ; Agua
-    JMP SHORT TIENE_COLOR
-    
-VERIFICAR_HIERBA:
-    CMP BL, 3
-    JNE TIENE_COLOR
-    MOV AL, COLOR_VERDE     ; Hierba
-    
-TIENE_COLOR:
-    ; Guardar color en memoria
-    MOV TILE_COLOR, AL
-    
-    ; Calcular posición X e Y del tile
+    ; Calcular posición X e Y del tile primero
     MOV AX, DI
+    PUSH BX
     MOV BX, 16
     MUL BX
+    POP BX
     MOV TILE_X, AX          ; X = columna * 16
     
     MOV AX, BP
+    PUSH BX
     MOV BX, 16
     MUL BX
+    POP BX
     MOV TILE_Y, AX          ; Y = fila * 16
     
-    ; Dibujar el tile 16x16
-    CALL DIBUJAR_TILE_16X16
+    ; Dibujar según tipo de tile
+    CMP BL, 0
+    JE DIBUJAR_PASTO
+    CMP BL, 1
+    JE DIBUJAR_ROCA
+    CMP BL, 2
+    JE DIBUJAR_AGUA_TILE
+    CMP BL, 3
+    JE DIBUJAR_PASTO        ; Hierba = pasto
+    CMP BL, 4
+    JE DIBUJAR_ARBOL_TILE   ; Árboles del mapa
+    JMP DIBUJAR_PASTO       ; Por defecto pasto
     
+DIBUJAR_PASTO:
+    CALL DIBUJAR_SPRITE_PASTO
+    JMP FIN_DIBUJAR_TILE_TEXTURA
+    
+DIBUJAR_ROCA:
+    CALL DIBUJAR_SPRITE_ROCA
+    JMP FIN_DIBUJAR_TILE_TEXTURA
+    
+DIBUJAR_ARBOL_TILE:
+    CALL DIBUJAR_SPRITE_ARBOL_MAPA
+    JMP FIN_DIBUJAR_TILE_TEXTURA
+    
+DIBUJAR_AGUA_TILE:
+    CALL DIBUJAR_SPRITE_AGUA
+    
+FIN_DIBUJAR_TILE_TEXTURA:
     POP BX
     POP AX
     RET
@@ -253,3 +260,363 @@ FIN_HUD:
     POP AX
     RET
 DIBUJAR_HUD ENDP
+
+
+; ========== SPRITES CON TEXTURAS ==========
+
+; DIBUJAR SPRITE DE PASTO (16x16) - Natural y suave
+DIBUJAR_SPRITE_PASTO PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV SI, 0
+FILA_PASTO:
+    CMP SI, 16
+    JB CONTINUAR_FILA_PASTO
+    JMP FIN_PASTO
+CONTINUAR_FILA_PASTO:
+    
+    MOV BX, 0
+COLUMNA_PASTO:
+    CMP BX, 16
+    JB CONTINUAR_COLUMNA_PASTO
+    JMP FIN_FILA_PASTO
+CONTINUAR_COLUMNA_PASTO:
+    
+    MOV DX, TILE_Y
+    ADD DX, SI
+    MOV CX, TILE_X
+    ADD CX, BX
+    
+    ; Mayoría verde base, con toques sutiles de verde oscuro
+    MOV AL, COLOR_VERDE
+    
+    ; Puntos de verde oscuro dispersos naturalmente
+    CMP SI, 1
+    JNE NO_F1_PASTO
+    CMP BX, 4
+    JE OSCURO_PASTO
+    CMP BX, 13
+    JE OSCURO_PASTO
+NO_F1_PASTO:
+    
+    CMP SI, 3
+    JNE NO_F3_PASTO
+    CMP BX, 2
+    JE OSCURO_PASTO
+    CMP BX, 9
+    JE OSCURO_PASTO
+NO_F3_PASTO:
+    
+    CMP SI, 6
+    JNE NO_F6_PASTO
+    CMP BX, 7
+    JE OSCURO_PASTO
+    CMP BX, 15
+    JE OSCURO_PASTO
+NO_F6_PASTO:
+    
+    CMP SI, 8
+    JNE NO_F8_PASTO
+    CMP BX, 0
+    JE OSCURO_PASTO
+    CMP BX, 11
+    JE OSCURO_PASTO
+NO_F8_PASTO:
+    
+    CMP SI, 10
+    JNE NO_F10_PASTO
+    CMP BX, 5
+    JE OSCURO_PASTO
+    CMP BX, 14
+    JE OSCURO_PASTO
+NO_F10_PASTO:
+    
+    CMP SI, 13
+    JNE NO_F13_PASTO
+    CMP BX, 3
+    JE OSCURO_PASTO
+    CMP BX, 10
+    JE OSCURO_PASTO
+NO_F13_PASTO:
+    
+    CMP SI, 15
+    JNE PIXEL_PASTO
+    CMP BX, 8
+    JE OSCURO_PASTO
+    JMP PIXEL_PASTO
+    
+OSCURO_PASTO:
+    MOV AL, COLOR_VERDE_OSCURO
+    
+PIXEL_PASTO:
+    CALL ESCRIBIR_PIXEL
+    
+    INC BX
+    JMP COLUMNA_PASTO
+    
+FIN_FILA_PASTO:
+    INC SI
+    JMP FILA_PASTO
+    
+FIN_PASTO:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_SPRITE_PASTO ENDP
+
+
+; DIBUJAR SPRITE DE ROCA (16x16) - Estilo retro
+DIBUJAR_SPRITE_ROCA PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV SI, 0
+FILA_ROCA:
+    CMP SI, 16
+    JAE FIN_ROCA
+    
+    MOV BX, 0
+COLUMNA_ROCA:
+    CMP BX, 16
+    JAE FIN_FILA_ROCA
+    
+    MOV DX, TILE_Y
+    ADD DX, SI
+    MOV CX, TILE_X
+    ADD CX, BX
+    
+    ; Roca con forma y sombras definidas
+    MOV AL, 7  ; Gris claro por defecto
+    
+    ; Contorno negro (forma de roca)
+    CMP SI, 0
+    JE BORDE_ROCA_NEGRO
+    CMP SI, 15
+    JE BORDE_ROCA_NEGRO
+    CMP BX, 0
+    JE BORDE_ROCA_NEGRO
+    CMP BX, 15
+    JE BORDE_ROCA_NEGRO
+    
+    ; Esquinas redondeadas
+    CMP SI, 1
+    JNE NO_ESQUINA1_ROCA
+    CMP BX, 1
+    JE BORDE_ROCA_NEGRO
+    CMP BX, 14
+    JE BORDE_ROCA_NEGRO
+NO_ESQUINA1_ROCA:
+    
+    CMP SI, 14
+    JNE NO_ESQUINA14_ROCA
+    CMP BX, 1
+    JE BORDE_ROCA_NEGRO
+    CMP BX, 14
+    JE BORDE_ROCA_NEGRO
+NO_ESQUINA14_ROCA:
+    
+    ; Sombras internas (gris oscuro)
+    CMP SI, 12
+    JB NO_SOMBRA_ROCA
+    CMP BX, 3
+    JB NO_SOMBRA_ROCA
+    MOV AL, 8  ; Gris oscuro
+    JMP PIXEL_ROCA
+    
+NO_SOMBRA_ROCA:
+    ; Luces (blanco)
+    CMP SI, 3
+    JA NO_LUZ_ROCA
+    CMP BX, 10
+    JB NO_LUZ_ROCA
+    MOV AL, COLOR_BLANCO
+    JMP PIXEL_ROCA
+    
+NO_LUZ_ROCA:
+    ; Textura media (gris)
+    MOV AL, COLOR_GRIS
+    JMP PIXEL_ROCA
+    
+BORDE_ROCA_NEGRO:
+    MOV AL, COLOR_NEGRO
+    
+PIXEL_ROCA:
+    CALL ESCRIBIR_PIXEL
+    
+    INC BX
+    JMP COLUMNA_ROCA
+    
+FIN_FILA_ROCA:
+    INC SI
+    JMP FILA_ROCA
+    
+FIN_ROCA:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_SPRITE_ROCA ENDP
+
+
+; DIBUJAR SPRITE DE AGUA (16x16) - Estilo retro con ondas
+DIBUJAR_SPRITE_AGUA PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV SI, 0
+FILA_AGUA_SPRITE:
+    CMP SI, 16
+    JAE FIN_AGUA_SPRITE
+    
+    MOV BX, 0
+COLUMNA_AGUA_SPRITE:
+    CMP BX, 16
+    JAE FIN_FILA_AGUA_SPRITE
+    
+    MOV DX, TILE_Y
+    ADD DX, SI
+    MOV CX, TILE_X
+    ADD CX, BX
+    
+    ; Agua azul con ondas horizontales definidas
+    MOV AL, COLOR_AZUL  ; Azul oscuro base
+    
+    ; Líneas de ondas (azul claro) - horizontales cada 4 filas
+    CMP SI, 3
+    JE ONDA_AGUA_CLARO
+    CMP SI, 7
+    JE ONDA_AGUA_CLARO
+    CMP SI, 11
+    JE ONDA_AGUA_CLARO
+    CMP SI, 15
+    JE ONDA_AGUA_CLARO
+    JMP PIXEL_AGUA_SPRITE
+    
+ONDA_AGUA_CLARO:
+    MOV AL, 9  ; Azul claro
+    
+PIXEL_AGUA_SPRITE:
+    CALL ESCRIBIR_PIXEL
+    
+    INC BX
+    JMP COLUMNA_AGUA_SPRITE
+    
+FIN_FILA_AGUA_SPRITE:
+    INC SI
+    JMP FILA_AGUA_SPRITE
+    
+FIN_AGUA_SPRITE:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_SPRITE_AGUA ENDP
+
+
+; DIBUJAR SPRITE DE ÁRBOL DEL MAPA (16x16) - Estilo Zelda/Pokemon
+DIBUJAR_SPRITE_ARBOL_MAPA PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV SI, 0
+FILA_ARBOL_MAPA:
+    CMP SI, 16
+    JAE FIN_ARBOL_MAPA
+    
+    MOV BX, 0
+COLUMNA_ARBOL_MAPA:
+    CMP BX, 16
+    JAE FIN_FILA_ARBOL_MAPA
+    
+    MOV DX, TILE_Y
+    ADD DX, SI
+    MOV CX, TILE_X
+    ADD CX, BX
+    
+    ; Fondo de pasto
+    MOV AL, COLOR_VERDE
+    
+    ; Copa del árbol (filas 0-10, circular)
+    CMP SI, 11
+    JAE TRONCO_ARBOL_MAPA
+    
+    ; Forma de copa verde oscuro
+    MOV AL, COLOR_VERDE_OSCURO
+    
+    ; Fila 0-1: parte superior estrecha
+    CMP SI, 2
+    JAE FILA2_ARBOL
+    CMP BX, 6
+    JB FONDO_ARBOL_MAPA
+    CMP BX, 10
+    JA FONDO_ARBOL_MAPA
+    JMP PIXEL_ARBOL_MAPA
+    
+FILA2_ARBOL:
+    ; Fila 2-9: copa ancha
+    CMP SI, 10
+    JAE FILA10_ARBOL
+    CMP BX, 3
+    JB FONDO_ARBOL_MAPA
+    CMP BX, 13
+    JA FONDO_ARBOL_MAPA
+    JMP PIXEL_ARBOL_MAPA
+    
+FILA10_ARBOL:
+    ; Fila 10: base de copa
+    CMP BX, 5
+    JB FONDO_ARBOL_MAPA
+    CMP BX, 11
+    JA FONDO_ARBOL_MAPA
+    JMP PIXEL_ARBOL_MAPA
+    
+TRONCO_ARBOL_MAPA:
+    ; Tronco café (filas 11-15, columnas 7-8)
+    CMP BX, 7
+    JB FONDO_ARBOL_MAPA
+    CMP BX, 9
+    JA FONDO_ARBOL_MAPA
+    MOV AL, 6  ; Café
+    JMP PIXEL_ARBOL_MAPA
+    
+FONDO_ARBOL_MAPA:
+    MOV AL, COLOR_VERDE  ; Pasto de fondo
+    
+PIXEL_ARBOL_MAPA:
+    CALL ESCRIBIR_PIXEL
+    
+    INC BX
+    JMP COLUMNA_ARBOL_MAPA
+    
+FIN_FILA_ARBOL_MAPA:
+    INC SI
+    JMP FILA_ARBOL_MAPA
+    
+FIN_ARBOL_MAPA:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_SPRITE_ARBOL_MAPA ENDP

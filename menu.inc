@@ -195,9 +195,8 @@ MOSTRAR_MENU_INICIO PROC
     LEA DX, CREDITOS
     INT 21H
     
-    ; Esperar tecla
-    MOV AH, 00H
-    INT 16H
+    ; Reproducir música en loop (se detiene cuando presionas tecla)
+    CALL MUSICA_MENU_INICIO
     
     POP DX
     POP CX
