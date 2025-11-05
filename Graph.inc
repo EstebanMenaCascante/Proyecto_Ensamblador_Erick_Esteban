@@ -19,9 +19,9 @@
     COLOR_AMARILLO EQU 14
     COLOR_BLANCO EQU 15
     
-    COLOR_VERDE_OSCURO EQU 2  ; Verde oscuro para madera
-    COLOR_ARENA EQU 14        ; Amarillo para arena del desierto
-    COLOR_TIERRA EQU 6        ; Marrón para tierra de montaña
+    COLOR_VERDE_OSCURO EQU 2  
+    COLOR_ARENA EQU 14      
+    COLOR_TIERRA EQU 6       
     
     ; Variables temporales para dibujar tiles
     TILE_X DW 0
@@ -31,7 +31,7 @@
     COLUMNA_ACTUAL DW 0
     
     ; Color del suelo según mapa actual
-    COLOR_SUELO_ACTUAL DB 2   ; Por defecto verde (bosque)
+    COLOR_SUELO_ACTUAL DB 2   
     
     ; Segmento de memoria de video EGA 640x350x16
     VIDEO_SEG EQU 0A000H
@@ -54,7 +54,7 @@ ESCRIBIR_PIXEL PROC
     PUSH AX
     PUSH BX
     MOV AH, 0CH      ; Función escribir pixel
-    XOR BH, BH       ; Página 0
+    XOR BH, BH      
     INT 10H
     POP BX
     POP AX
@@ -95,19 +95,19 @@ DIBUJAR_MAPA_COMPLETO PROC
     PUSH DI
     PUSH BP
     
-    MOV SI, 0           ; Índice del mapa
-    MOV FILA_ACTUAL, 0  ; Fila 0
+    MOV SI, 0           
+    MOV FILA_ACTUAL, 0  
     
 PROXIMA_FILA_MAPA:
     MOV AX, FILA_ACTUAL
-    CMP AX, 20          ; 20 filas (para caber con HUD de 25px)
+    CMP AX, 20          
     JAE FIN_MAPA_COMPLETO
     
-    MOV COLUMNA_ACTUAL, 0  ; Columna 0
+    MOV COLUMNA_ACTUAL, 0  
     
 PROXIMA_COLUMNA_MAPA:
     MOV AX, COLUMNA_ACTUAL
-    CMP AX, 40          ; 40 columnas
+    CMP AX, 40          
     JAE SIGUIENTE_FILA_MAPA
     
     ; Obtener tile del mapa
@@ -140,8 +140,6 @@ FIN_MAPA_COMPLETO:
     RET
 DIBUJAR_MAPA_COMPLETO ENDP
 
-
-; OBTENER COLOR Y DIBUJAR TILE CON SPRITE/TEXTURA
 ; BL = tipo de tile, DI = columna, BP = fila
 
 OBTENER_COLOR_Y_DIBUJAR_TILE PROC
@@ -161,7 +159,7 @@ OBTENER_COLOR_Y_DIBUJAR_TILE PROC
     MOV BX, 16
     MUL BX
     POP BX
-    ADD AX, 25          ; Offset para el HUD (25 pixels de altura)
+    ADD AX, 25          ; Offset para el HUD 
     MOV TILE_Y, AX          ; Y = fila * 16 + 25
     
     ; Dibujar según tipo de tile
@@ -172,7 +170,7 @@ OBTENER_COLOR_Y_DIBUJAR_TILE PROC
     CMP BL, 2
     JE DIBUJAR_AGUA_TILE
     CMP BL, 3
-    JE DIBUJAR_PASTO        ; Hierba = pasto
+    JE DIBUJAR_PASTO        ; PASTO
     CMP BL, 4
     JE DIBUJAR_ARBOL_TILE   ; Árboles del mapa
     CMP BL, 5
@@ -283,9 +281,9 @@ FIN_HUD:
 DIBUJAR_HUD ENDP
 
 
-; ========== SPRITES CON TEXTURAS ==========
+;SPRITES CON TEXTURAS
 
-; DIBUJAR SPRITE DE PASTO (16x16) - Natural y suave
+; DIBUJAR SPRITE DE PASTO (16x16)
 DIBUJAR_SPRITE_PASTO PROC
     PUSH AX
     PUSH BX
@@ -315,7 +313,7 @@ CONTINUAR_COLUMNA_PASTO:
     ; Usar color del suelo según el mapa actual
     MOV AL, COLOR_SUELO_ACTUAL
     
-    ; Puntos de variación de tono (más oscuros)
+    ; Puntos de variación de tono
     CMP SI, 1
     JNE NO_F1_PASTO
     CMP BX, 4
@@ -372,24 +370,22 @@ NO_F13_PASTO:
     
 OSCURO_PASTO:
     ; Usar un tono más oscuro del color actual
-    ; Verde (2) → Verde oscuro (2, mismo)
-    ; Gris (8) → Negro (0)
-    ; Marrón (6) → Gris oscuro (8)
+    
     MOV AL, COLOR_SUELO_ACTUAL
     
-    CMP AL, 8               ; ¿Es gris (montaña)?
+    CMP AL, 8               
     JNE NO_ES_GRIS
-    MOV AL, 0               ; Usar negro para variación lodosa
+    MOV AL, 0               
     JMP PIXEL_PASTO
 NO_ES_GRIS:
     
-    CMP AL, 6               ; ¿Es marrón (desierto)?
+    CMP AL, 6               
     JNE NO_ES_MARRON
-    MOV AL, 8               ; Usar gris para variación de arena
+    MOV AL, 8               
     JMP PIXEL_PASTO
 NO_ES_MARRON:
     
-    ; Verde o cualquier otro → mantener verde oscuro
+  
     MOV AL, 2
     
 PIXEL_PASTO:
@@ -412,7 +408,7 @@ FIN_PASTO:
 DIBUJAR_SPRITE_PASTO ENDP
 
 
-; DIBUJAR SPRITE DE ROCA (16x16) - Estilo retro
+; DIBUJAR SPRITE DE ROCA (16x16)
 DIBUJAR_SPRITE_ROCA PROC
     PUSH AX
     PUSH BX
@@ -435,10 +431,10 @@ COLUMNA_ROCA:
     MOV CX, TILE_X
     ADD CX, BX
     
-    ; Roca con forma y sombras definidas
-    MOV AL, 7  ; Gris claro por defecto
+  
+    MOV AL, 7  
     
-    ; Contorno negro (forma de roca)
+   
     CMP SI, 0
     JE BORDE_ROCA_NEGRO
     CMP SI, 15
@@ -465,7 +461,7 @@ NO_ESQUINA1_ROCA:
     JE BORDE_ROCA_NEGRO
 NO_ESQUINA14_ROCA:
     
-    ; Sombras internas (gris oscuro)
+   
     CMP SI, 12
     JB NO_SOMBRA_ROCA
     CMP BX, 3
@@ -474,7 +470,7 @@ NO_ESQUINA14_ROCA:
     JMP PIXEL_ROCA
     
 NO_SOMBRA_ROCA:
-    ; Luces (blanco)
+    ; Luces 
     CMP SI, 3
     JA NO_LUZ_ROCA
     CMP BX, 10
@@ -483,7 +479,7 @@ NO_SOMBRA_ROCA:
     JMP PIXEL_ROCA
     
 NO_LUZ_ROCA:
-    ; Textura media (gris)
+  
     MOV AL, COLOR_GRIS
     JMP PIXEL_ROCA
     
@@ -510,7 +506,7 @@ FIN_ROCA:
 DIBUJAR_SPRITE_ROCA ENDP
 
 
-; DIBUJAR SPRITE DE AGUA (16x16) - Estilo retro con ondas
+; DIBUJAR SPRITE DE AGUA (16x16)
 DIBUJAR_SPRITE_AGUA PROC
     PUSH AX
     PUSH BX
@@ -533,10 +529,9 @@ COLUMNA_AGUA_SPRITE:
     MOV CX, TILE_X
     ADD CX, BX
     
-    ; Agua azul con ondas horizontales definidas
-    MOV AL, COLOR_AZUL  ; Azul oscuro base
     
-    ; Líneas de ondas (azul claro) - horizontales cada 4 filas
+    MOV AL, COLOR_AZUL  
+   
     CMP SI, 3
     JE ONDA_AGUA_CLARO
     CMP SI, 7
@@ -570,7 +565,7 @@ FIN_AGUA_SPRITE:
 DIBUJAR_SPRITE_AGUA ENDP
 
 
-; DIBUJAR SPRITE DE ÁRBOL DEL MAPA (16x16) - Estilo Zelda/Pokemon
+; DIBUJAR SPRITE DE ÁRBOL DEL MAPA (16x16)
 DIBUJAR_SPRITE_ARBOL_MAPA PROC
     PUSH AX
     PUSH BX
@@ -596,14 +591,14 @@ COLUMNA_ARBOL_MAPA:
     ; Fondo de pasto
     MOV AL, COLOR_VERDE
     
-    ; Copa del árbol (filas 0-10, circular)
+  
     CMP SI, 11
     JAE TRONCO_ARBOL_MAPA
     
     ; Forma de copa verde oscuro
     MOV AL, COLOR_VERDE_OSCURO
     
-    ; Fila 0-1: parte superior estrecha
+    
     CMP SI, 2
     JAE FILA2_ARBOL
     CMP BX, 6
@@ -623,7 +618,7 @@ FILA2_ARBOL:
     JMP PIXEL_ARBOL_MAPA
     
 FILA10_ARBOL:
-    ; Fila 10: base de copa
+    
     CMP BX, 5
     JB FONDO_ARBOL_MAPA
     CMP BX, 11
@@ -631,7 +626,7 @@ FILA10_ARBOL:
     JMP PIXEL_ARBOL_MAPA
     
 TRONCO_ARBOL_MAPA:
-    ; Tronco café (filas 11-15, columnas 7-8)
+    
     CMP BX, 7
     JB FONDO_ARBOL_MAPA
     CMP BX, 9
@@ -640,7 +635,7 @@ TRONCO_ARBOL_MAPA:
     JMP PIXEL_ARBOL_MAPA
     
 FONDO_ARBOL_MAPA:
-    MOV AL, COLOR_VERDE  ; Pasto de fondo
+    MOV AL, COLOR_VERDE  
     
 PIXEL_ARBOL_MAPA:
     CALL ESCRIBIR_PIXEL
@@ -661,10 +656,7 @@ FIN_ARBOL_MAPA:
     RET
 DIBUJAR_SPRITE_ARBOL_MAPA ENDP
 
-
-; ========================================
-; DIBUJAR PORTAL (marco brillante con efecto mágico)
-; ========================================
+; DIBUJAR PORTAL
 DIBUJAR_PORTAL PROC
     PUSH AX
     PUSH BX
@@ -689,10 +681,10 @@ CONTINUAR_PIXEL_PORTAL:
     MOV CX, TILE_X
     ADD CX, BX
     
-    ; Color base del portal (fondo oscuro para contraste)
-    MOV AL, 0           ; Negro como base
+    ; Color base del portal
+    MOV AL, 0           
     
-    ; Marco exterior (bordes del tile) - Amarillo brillante
+    ; Marco exterior
     CMP SI, 0
     JE MARCO_PORTAL
     CMP SI, 15
@@ -703,11 +695,11 @@ CONTINUAR_PIXEL_PORTAL:
     JNE CHEQUEAR_MARCO_INTERNO
     
 MARCO_PORTAL:
-    MOV AL, COLOR_AMARILLO      ; Amarillo brillante
+    MOV AL, COLOR_AMARILLO      
     JMP PIXEL_PORTAL
     
 CHEQUEAR_MARCO_INTERNO:
-    ; Marco interior - Cyan brillante (efecto mágico)
+    ; Marco interior
     CMP SI, 2
     JE MARCO_INTERNO
     CMP SI, 13
@@ -718,12 +710,10 @@ CHEQUEAR_MARCO_INTERNO:
     JNE CHEQUEAR_CENTRO
     
 MARCO_INTERNO:
-    MOV AL, COLOR_CYAN_CLARO    ; Cyan brillante
+    MOV AL, COLOR_CYAN_CLARO    
     JMP PIXEL_PORTAL
     
 CHEQUEAR_CENTRO:
-    ; Centro - Relleno con efecto mágico brillante
-    ; Área central (4x4 píxeles blancos brillantes)
     CMP SI, 6
     JB RELLENO_CYAN
     CMP SI, 10
@@ -745,7 +735,7 @@ TEST_CYAN_CENTRO:
     JMP PIXEL_PORTAL
     
 RELLENO_CYAN:
-    ; Relleno intermedio entre marcos - Cyan oscuro
+    ; Relleno intermedio entre marcos
     MOV AL, COLOR_CYAN
     
 PIXEL_PORTAL:

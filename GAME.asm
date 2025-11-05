@@ -1,7 +1,7 @@
 .MODEL SMALL
 .STACK 100H
 
-; Incluir archivos de funciones
+
 INCLUDE Graph.INC
 INCLUDE map.INC
 INCLUDE mapas.INC
@@ -18,7 +18,7 @@ INCLUDE effects.INC
     MENSAJE_VICTORIA DB '!FELICIDADES! RECOLECTASTE TODOS LOS RECURSOS', '$'
     MENSAJE_FIN DB 'FIN DEL JUEGO', '$'
     MENSAJE_PUNTOS DB 'PUNTUACION FINAL: ', '$'
-    ; Variable para controlar reintento despues de GAME OVER
+    ; Variable PARA GAME OVER
     REINTENTAR DB 0
     MENSAJE_REINTENTAR DB 'Desea volver a intentar? (Y/N): ', '$'
     
@@ -54,13 +54,10 @@ MAIN PROC
     ; Mostrar pantalla de inicio primero
     CALL MOSTRAR_MENU_INICIO
     
-    ; AHORA reproducir música EN LOOP mientras espera
-    ; (la música tiene verificación de tecla interna y sale cuando presionas algo)
-    
     ; Iniciar modo gráfico
     CALL INICIAR_MODO_GRAFICO
     
-    ; Dibujar HUD primero (en el fondo)
+    ; Dibujar HUD primero 
     CALL DIBUJAR_HUD_COMPLETO
     
     ; Inicializar sistema de múltiples mapas
@@ -95,10 +92,10 @@ MAIN ENDP
 
 BUCLE_PRINCIPAL PROC
 BUCLE_JUEGO:
-    ; Leer teclado
+    
     CALL LEER_TECLADO
     
-    ; Verificar recolección (actualiza HUD internamente si hay recolección)
+    ; Verificar recolección 
     CALL VERIFICAR_RECOLECCION
     
     ; Control de velocidad
@@ -115,14 +112,14 @@ BUCLE_JUEGO:
     JMP BUCLE_JUEGO
     
 VICTORIA:
-    ; Pantalla de victoria mejorada (ya incluye espera de tecla)
+    ; Pantalla de victoria mejorada 
     CALL PANTALLA_VICTORIA
     
     ; Volver a modo texto antes de salir
     MOV AX, 0003H
     INT 10H
     
-    ; Salir del programa directamente
+    
     MOV AH, 4CH
     INT 21H
     
@@ -148,17 +145,17 @@ PANTALLA_VICTORIA PROC
     PUSH CX
     PUSH DX
     
-    ; === ANIMACION 1: Parpadeo de colores ===
+    ;Parpadeo de colores 
     MOV CX, 3
 PARPADEO_COLORES:
     PUSH CX
     
-    ; Color 1: Azul brillante
+    ;Azul brillante
     MOV AX, 0003H
     INT 10H
     MOV AH, 06H
     MOV AL, 0
-    MOV BH, 9FH         ; Fondo azul brillante
+    MOV BH, 9FH         ; Fondo azul 
     MOV CX, 0
     MOV DX, 184FH
     INT 10H
@@ -169,7 +166,7 @@ PARPADEO_COLORES:
     MOV AH, 86H
     INT 15H
     
-    ; Color 2: Verde brillante
+    ;Verde brillante
     MOV AX, 0003H
     INT 10H
     MOV AH, 06H
@@ -188,7 +185,7 @@ PARPADEO_COLORES:
     POP CX
     LOOP PARPADEO_COLORES
     
-    ; === PANTALLA FINAL: Verde con texto amarillo ===
+    ;Verde con texto amarillo 
     MOV AX, 0003H
     INT 10H
     MOV AH, 06H
@@ -198,7 +195,7 @@ PARPADEO_COLORES:
     MOV DX, 184FH
     INT 10H
     
-    ; === ASCII ART "VICTORIA!" (Animado línea por línea) ===
+    ;ASCII ART "VICTORIA!"
     
     ; Línea 1
     MOV AH, 02H
@@ -266,7 +263,7 @@ PARPADEO_COLORES:
     MOV AH, 86H
     INT 15H
     
-    ; === MENSAJE DE FELICITACION ===
+    ;MENSAJE DE FELICITACION
     MOV AH, 02H
     MOV DH, 10
     MOV DL, 22
@@ -275,10 +272,10 @@ PARPADEO_COLORES:
     LEA DX, FELICITACION
     INT 21H
     
-    ; Reproducir música de victoria (después de mostrar pantalla)
+    ; Reproducir música de victoria
     CALL SONIDO_VICTORIA
     
-    ; === ESTADISTICAS (Animadas) ===
+    ;ESTADISTICAS
     
     ; Piedras
     MOV CX, 0
@@ -436,7 +433,7 @@ BUFFER_LIMPIO_VICTORIA:
 PANTALLA_VICTORIA ENDP
 
 
-; MOSTRAR NUMERO DE DOS DIGITOS (0-99)
+
 ; AL = numero
 
 MOSTRAR_NUMERO_DOS_DIGITOS PROC
@@ -470,7 +467,7 @@ MOSTRAR_NUMERO_DOS_DIGITOS PROC
 MOSTRAR_NUMERO_DOS_DIGITOS ENDP
 
 
-; MOSTRAR PUNTUACIÓN FINAL
+
 ; AX = puntuación
 
 MOSTRAR_PUNTUACION_FINAL PROC
@@ -506,7 +503,7 @@ MOSTRAR_LOOP:
 MOSTRAR_PUNTUACION_FINAL ENDP
 
 
-; PANTALLA DE GAME OVER (MUERTE POR AGUA)
+;MUERTE POR AGUA
 
 PANTALLA_GAME_OVER PROC
     PUSH AX
@@ -523,7 +520,7 @@ PANTALLA_GAME_OVER PROC
 PARPADEO_ROJO:
     PUSH CX
     
-    ; Color 1: Rojo oscuro
+    ;Rojo oscuro
     MOV AH, 06H
     MOV AL, 0
     MOV BH, 40H         ; Fondo rojo oscuro
@@ -537,7 +534,7 @@ PARPADEO_ROJO:
     MOV AH, 86H
     INT 15H
     
-    ; Color 2: Rojo brillante
+    ;Rojo brillante
     MOV AH, 06H
     MOV AL, 0
     MOV BH, 4FH         ; Fondo rojo brillante
@@ -554,7 +551,7 @@ PARPADEO_ROJO:
     POP CX
     LOOP PARPADEO_ROJO
     
-    ; Fondo final rojo oscuro
+    ;Fondo final rojo oscuro
     MOV AH, 06H
     MOV AL, 0
     MOV BH, 4EH         ; Fondo rojo, texto amarillo
@@ -562,7 +559,7 @@ PARPADEO_ROJO:
     MOV DX, 184FH
     INT 10H
     
-    ; ASCII Art "GAME OVER" línea por línea
+    ; ASCII Art "GAME OVER"
     MOV AH, 02H
     MOV BH, 0
     MOV DH, 5
@@ -643,7 +640,7 @@ PARPADEO_ROJO:
     MOV AH, 86H
     INT 15H
     
-    ; Mensaje "TE AHOGASTE"
+    ; Mensaje
     MOV AH, 02H
     MOV DH, 13
     MOV DL, 25
@@ -652,10 +649,10 @@ PARPADEO_ROJO:
     LEA DX, MENSAJE_AHOGADO
     INT 21H
     
-    ; Reproducir música de derrota (después de mostrar pantalla)
+    ;Reproducir música de derrota
     CALL MUSICA_GAME_OVER
     
-    ; Mensaje: Preguntar si desea reintentar
+    ;Preguntar si desea reintentar
     MOV AH, 02H
     MOV DH, 20
     MOV DL, 18
@@ -665,11 +662,11 @@ PARPADEO_ROJO:
     INT 21H
 
 ESPERAR_RESPUESTA_GO:
-    ; Leer tecla (espera) y decidir
+    ; Leer tecla y decidir
     MOV AH, 00H
     INT 16H        ; AL = tecla
     
-    ; Normalizar a mayusculas
+   
     CMP AL, 'y'
     JE REINICIAR_DESDE_GO
     CMP AL, 'Y'
@@ -707,7 +704,7 @@ SALIR_DESDE_GO:
     
 PANTALLA_GAME_OVER ENDP
 
-; REINICIAR JUEGO - restablece estado y vuelve al bucle principal
+; REINICIAR JUEGO
 REINICIAR_JUEGO PROC
     PUSH AX
     PUSH BX
@@ -715,7 +712,6 @@ REINICIAR_JUEGO PROC
     PUSH DX
 
     ; Reiniciar variables SIN recargar mapa ni recursos
-    ; (mapa y recursos deben ser fijos)
     CALL INICIAR_MODO_GRAFICO
     CALL INICIALIZAR_JUGADOR      ; Resetear posición del jugador
     CALL REINICIAR_INVENTARIO      ; Limpiar inventario
