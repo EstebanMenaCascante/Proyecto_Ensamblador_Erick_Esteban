@@ -54,7 +54,7 @@ SONIDO_RECOLECTAR PROC
 SONIDO_RECOLECTAR ENDP
 
 
-; REPRODUCIR SONIDO DE VICTORIA (ÉPICO Y LARGO EN LOOP)
+; REPRODUCIR SONIDO DE VICTORIA
 
 SONIDO_VICTORIA PROC
     PUSH AX
@@ -62,7 +62,6 @@ SONIDO_VICTORIA PROC
     PUSH DX
     
 LOOP_MUSICA_VICTORIA:
-    ; === INTRO: Fanfarria heroica ===
     ; Do Mayor (C5)
     MOV AL, 182
     OUT 43H, AL
@@ -110,7 +109,6 @@ LOOP_MUSICA_VICTORIA:
     MOV CX, 12
     CALL DELAY_LOOP
     
-    ; === DESARROLLO: Melodía triunfante ===
     ; Si (B5)
     MOV AL, 182
     OUT 43H, AL
@@ -163,7 +161,6 @@ LOOP_MUSICA_VICTORIA:
     MOV CX, 3
     CALL DELAY_LOOP
     
-    ; === CLÍMAX FINAL: Secuencia ascendente épica ===
     ; Sol (G5)
     MOV AL, 182
     OUT 43H, AL
@@ -200,7 +197,7 @@ LOOP_MUSICA_VICTORIA:
     MOV CX, 6
     CALL DELAY_LOOP
     
-    ; Sol Alto (G6) - nota final épica
+    ; Sol Alto (G6)
     MOV AL, 182
     OUT 43H, AL
     MOV AX, 760
@@ -285,7 +282,7 @@ SONIDO_BEEP PROC
 SONIDO_BEEP ENDP
 
 
-; MÚSICA DE GAME OVER (DERROTA DRAMÁTICA Y LARGA EN LOOP)
+; MÚSICA DE GAME OVER
 
 MUSICA_GAME_OVER PROC
     PUSH AX
@@ -293,7 +290,6 @@ MUSICA_GAME_OVER PROC
     PUSH DX
     
 LOOP_MUSICA_GAMEOVER:
-    ; === INTRO: Notas altas de shock ===
     ; Mi alto (E5)
     MOV AL, 182
     OUT 43H, AL
@@ -319,7 +315,6 @@ LOOP_MUSICA_GAMEOVER:
     MOV CX, 4
     CALL DELAY_LOOP
     
-    ; === DESCENSO: Melodía descendente triste ===
     ; La (A4)
     MOV AL, 182
     OUT 43H, AL
@@ -364,7 +359,6 @@ LOOP_MUSICA_GAMEOVER:
     MOV CX, 10
     CALL DELAY_LOOP
     
-    ; === PARTE MEDIA: Lamento ===
     ; Re (D4)
     MOV AL, 182
     OUT 43H, AL
@@ -416,8 +410,7 @@ LOOP_MUSICA_GAMEOVER:
     
     MOV CX, 5
     CALL DELAY_LOOP
-    
-    ; === FINAL: Nota grave y larga de derrota ===
+
     ; Do grave (C3)
     MOV AL, 182
     OUT 43H, AL
@@ -463,7 +456,7 @@ SALIR_LOOP_GAMEOVER:
 MUSICA_GAME_OVER ENDP
 
 
-; MÚSICA DEL MENÚ DE INICIO (LOOP CONTINUO - MELODÍA LARGA)
+; MÚSICA DEL MENÚ DE INICIO
 
 MUSICA_MENU_INICIO PROC
     PUSH AX
@@ -472,7 +465,6 @@ MUSICA_MENU_INICIO PROC
     
     ; Loop infinito de música
 LOOP_MUSICA_MENU:
-    ; === PRIMERA FRASE: Melodía principal ascendente ===
     ; Do (C5)
     MOV AL, 182
     OUT 43H, AL
@@ -519,8 +511,7 @@ LOOP_MUSICA_MENU:
     
     MOV CX, 8
     CALL DELAY_LOOP
-    
-    ; === SEGUNDA FRASE: Variación ===
+
     ; Si (B5)
     MOV AL, 182
     OUT 43H, AL
@@ -553,8 +544,7 @@ LOOP_MUSICA_MENU:
     
     MOV CX, 8
     CALL DELAY_LOOP
-    
-    ; === TERCERA FRASE: Puente ===
+ 
     ; La (A5)
     MOV AL, 182
     OUT 43H, AL
@@ -598,8 +588,7 @@ LOOP_MUSICA_MENU:
     
     MOV CX, 8
     CALL DELAY_LOOP
-    
-    ; === CUARTA FRASE: Clímax ===
+
     ; Do Alto (C6)
     MOV AL, 182
     OUT 43H, AL
@@ -643,8 +632,7 @@ LOOP_MUSICA_MENU:
     
     MOV CX, 10
     CALL DELAY_LOOP
-    
-    ; === QUINTA FRASE: Nueva sección ===
+
     ; Fa (F5)
     MOV AL, 182
     OUT 43H, AL
@@ -688,8 +676,7 @@ LOOP_MUSICA_MENU:
     
     MOV CX, 8
     CALL DELAY_LOOP
-    
-    ; === SEXTA FRASE: Resolución ===
+
     ; Mi (E5)
     MOV AL, 182
     OUT 43H, AL

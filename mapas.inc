@@ -1,6 +1,4 @@
-; ========================================
 ; SISTEMA DE MÚLTIPLES MAPAS - MAPAS.INC
-; ========================================
 ; Gestiona 3 mapas diferentes con transiciones:
 ; - Mapa Principal (centro)
 ; - Mapa Montañoso (izquierda)
@@ -8,7 +6,7 @@
 
 
 .DATA
-    ; === IDENTIFICADORES DE MAPAS ===
+    ; ID DE MAPAS
     MAPA_PRINCIPAL EQU 0
     MAPA_MONTANOSO EQU 1
     MAPA_DESERTICO EQU 2
@@ -16,37 +14,33 @@
     MAPA_ACTUAL DB 0        ; Mapa donde está el jugador actualmente
     MAPA_ANTERIOR DB 0      ; Para regresar
     
-    ; === DATOS DE LOS 3 MAPAS (40x20 = 800 bytes cada uno) ===
+    ; DATOS DE LOS 3 MAPAS
     MAPA_PRINCIPAL_DATOS DB 800 DUP(?)
     MAPA_MONTANOSO_DATOS DB 800 DUP(?)
     MAPA_DESERTICO_DATOS DB 800 DUP(?)
     
-    ; === FLAGS DE GENERACIÓN ===
+    ; FLAGS DE GENERACIÓN
     MAPA_PRINCIPAL_GENERADO DB 0
     MAPA_MONTANOSO_GENERADO DB 0
     MAPA_DESERTICO_GENERADO DB 0
     
-    ; === PUNTOS DE ENTRADA/SALIDA ===
+    ; PUNTOS DE ENTRADA/SALIDA
     ; Cuando entras por la izquierda, apareces en X=608 (derecha del nuevo mapa)
     ; Cuando entras por la derecha, apareces en X=16 (izquierda del nuevo mapa)
     ENTRADA_IZQUIERDA_X DW 608      ; 40*16 - 32 (margen)
     ENTRADA_DERECHA_X DW 16
     ENTRADA_Y DW 185                ; Misma Y (centro vertical)
     
-    ; === LÍMITES PARA DETECTAR CAMBIO DE MAPA ===
-    ; Solo cambian cuando el jugador cruza completamente (para evitar cambios accidentales)
+    ; LÍMITES PARA DETECTAR CAMBIO DE MAPA
     LIMITE_IZQ_CAMBIO DW 5          ; Si X <= 5, cambiar a mapa izquierdo
     LIMITE_DER_CAMBIO DW 620        ; Si X >= 620, cambiar a mapa derecho
     
-    ; === VARIABLES DE TRANSICIÓN ===
+    ;VARIABLES DE TRANSICIÓN
     TRANSICION_ACTIVA DB 0
     CONTADOR_FADE DB 0
 
 .CODE
 
-; ========================================
-; INICIALIZAR SISTEMA DE MAPAS
-; ========================================
 INICIALIZAR_MAPAS PROC
     ; Empezar en el mapa principal
     MOV MAPA_ACTUAL, MAPA_PRINCIPAL
@@ -70,10 +64,6 @@ YA_EXISTE_PRINCIPAL_INIT:
     RET
 INICIALIZAR_MAPAS ENDP
 
-
-; ========================================
-; GENERAR MAPA PRINCIPAL (Bosque/Pradera)
-; ========================================
 GENERAR_MAPA_PRINCIPAL PROC
     PUSH AX
     PUSH BX
@@ -165,10 +155,6 @@ YA_GENERADO_PRINCIPAL:
     RET
 GENERAR_MAPA_PRINCIPAL ENDP
 
-
-; ========================================
-; GENERAR MAPA MONTAÑOSO (Izquierda)
-; ========================================
 GENERAR_MAPA_MONTANOSO PROC
     PUSH AX
     PUSH BX
@@ -242,10 +228,6 @@ YA_GENERADO_MONTANOSO:
     RET
 GENERAR_MAPA_MONTANOSO ENDP
 
-
-; ========================================
-; GENERAR MAPA DESÉRTICO (Derecha)
-; ========================================
 GENERAR_MAPA_DESERTICO PROC
     PUSH AX
     PUSH BX
@@ -319,11 +301,6 @@ YA_GENERADO_DESERTICO:
     RET
 GENERAR_MAPA_DESERTICO ENDP
 
-
-; ========================================
-; VERIFICAR CAMBIO DE MAPA
-; Llamar después de cada movimiento del jugador
-; ========================================
 VERIFICAR_CAMBIO_MAPA PROC
     PUSH AX
     PUSH BX
@@ -400,11 +377,6 @@ FIN_VERIFICAR_CAMBIO:
     RET
 VERIFICAR_CAMBIO_MAPA ENDP
 
-
-; ========================================
-; TRANSICIÓN Y CAMBIO DE MAPA
-; BL = ID del nuevo mapa
-; ========================================
 TRANSICION_CAMBIO_MAPA PROC
     PUSH AX
     PUSH BX
@@ -512,10 +484,6 @@ NO_REPOSICIONAR:
     RET
 TRANSICION_CAMBIO_MAPA ENDP
 
-
-; ========================================
-; CARGAR DATOS DEL MAPA ACTUAL A MAPA_DATOS
-; ========================================
 CARGAR_DATOS_MAPA_ACTUAL PROC
     PUSH AX
     PUSH CX
@@ -587,10 +555,6 @@ FIN_CARGAR_DATOS:
     RET
 CARGAR_DATOS_MAPA_ACTUAL ENDP
 
-
-; ========================================
-; FADE OUT SIMPLE (Oscurecer pantalla)
-; ========================================
 FADE_OUT_SIMPLE PROC
     PUSH AX
     PUSH BX
@@ -648,10 +612,6 @@ FADE_DELAY:
     RET
 FADE_OUT_SIMPLE ENDP
 
-
-; ========================================
-; FADE IN SIMPLE (Aclarar pantalla)
-; ========================================
 FADE_IN_SIMPLE PROC
     PUSH AX
     PUSH CX
@@ -669,10 +629,6 @@ FADE_IN_SIMPLE PROC
     RET
 FADE_IN_SIMPLE ENDP
 
-
-; ========================================
-; GENERAR MAPA TIPO PRINCIPAL (Bosque)
-; ========================================
 GENERAR_MAPA_TIPO_PRINCIPAL PROC
     PUSH AX
     PUSH BX
@@ -707,10 +663,6 @@ LLENAR_PASTO_PRINCIPAL:
     RET
 GENERAR_MAPA_TIPO_PRINCIPAL ENDP
 
-
-; ========================================
-; GENERAR MAPA TIPO MONTAÑOSO (Rocoso)
-; ========================================
 GENERAR_MAPA_TIPO_MONTANOSO PROC
     PUSH AX
     PUSH BX
@@ -747,10 +699,6 @@ LLENAR_PASTO_MONTANOSO:
     RET
 GENERAR_MAPA_TIPO_MONTANOSO ENDP
 
-
-; ========================================
-; GENERAR MAPA TIPO DESÉRTICO (Arena)
-; ========================================
 GENERAR_MAPA_TIPO_DESERTICO PROC
     PUSH AX
     PUSH BX
@@ -787,20 +735,12 @@ LLENAR_ARENA_DESERTICO:
     RET
 GENERAR_MAPA_TIPO_DESERTICO ENDP
 
-
-; ========================================
-; MARCAR PORTALES EN EL MAPA (ambos lados)
-; ========================================
 MARCAR_PORTALES_MAPA PROC
     CALL MARCAR_PORTAL_IZQUIERDO
     CALL MARCAR_PORTAL_DERECHO
     RET
 MARCAR_PORTALES_MAPA ENDP
 
-
-; ========================================
-; MARCAR PORTAL IZQUIERDO (filas 8-12, col 0)
-; ========================================
 MARCAR_PORTAL_IZQUIERDO PROC
     PUSH SI
     PUSH CX
@@ -836,10 +776,6 @@ MARCAR_PORTAL_IZQUIERDO PROC
     RET
 MARCAR_PORTAL_IZQUIERDO ENDP
 
-
-; ========================================
-; MARCAR PORTAL DERECHO (filas 8-12, col 39)
-; ========================================
 MARCAR_PORTAL_DERECHO PROC
     PUSH SI
     PUSH CX
@@ -875,10 +811,6 @@ MARCAR_PORTAL_DERECHO PROC
     RET
 MARCAR_PORTAL_DERECHO ENDP
 
-
-; ========================================
-; COPIAR MAPA_DATOS A BUFFER PRINCIPAL
-; ========================================
 COPIAR_MAPA_DATOS_A_PRINCIPAL PROC
     PUSH SI
     PUSH DI
@@ -899,9 +831,6 @@ COPIAR_MAPA_DATOS_A_PRINCIPAL PROC
     RET
 COPIAR_MAPA_DATOS_A_PRINCIPAL ENDP
 
-; ========================================
-; COPIAR BUFFER PRINCIPAL A MAPA_DATOS
-; ========================================
 COPIAR_PRINCIPAL_A_MAPA_DATOS PROC
     PUSH SI
     PUSH DI
@@ -922,9 +851,6 @@ COPIAR_PRINCIPAL_A_MAPA_DATOS PROC
     RET
 COPIAR_PRINCIPAL_A_MAPA_DATOS ENDP
 
-; ========================================
-; COPIAR MAPA_DATOS A BUFFER MONTAÑOSO
-; ========================================
 COPIAR_MAPA_DATOS_A_MONTANOSO PROC
     PUSH SI
     PUSH DI
@@ -945,9 +871,6 @@ COPIAR_MAPA_DATOS_A_MONTANOSO PROC
     RET
 COPIAR_MAPA_DATOS_A_MONTANOSO ENDP
 
-; ========================================
-; COPIAR BUFFER MONTAÑOSO A MAPA_DATOS
-; ========================================
 COPIAR_MONTANOSO_A_MAPA_DATOS PROC
     PUSH SI
     PUSH DI
@@ -968,9 +891,6 @@ COPIAR_MONTANOSO_A_MAPA_DATOS PROC
     RET
 COPIAR_MONTANOSO_A_MAPA_DATOS ENDP
 
-; ========================================
-; COPIAR MAPA_DATOS A BUFFER DESÉRTICO
-; ========================================
 COPIAR_MAPA_DATOS_A_DESERTICO PROC
     PUSH SI
     PUSH DI
@@ -991,9 +911,6 @@ COPIAR_MAPA_DATOS_A_DESERTICO PROC
     RET
 COPIAR_MAPA_DATOS_A_DESERTICO ENDP
 
-; ========================================
-; COPIAR BUFFER DESÉRTICO A MAPA_DATOS
-; ========================================
 COPIAR_DESERTICO_A_MAPA_DATOS PROC
     PUSH SI
     PUSH DI
@@ -1014,10 +931,6 @@ COPIAR_DESERTICO_A_MAPA_DATOS PROC
     RET
 COPIAR_DESERTICO_A_MAPA_DATOS ENDP
 
-
-; ========================================
-; ACTUALIZAR COLOR DEL SUELO SEGÚN MAPA
-; ========================================
 ACTUALIZAR_COLOR_SUELO PROC
     PUSH AX
     
@@ -1053,11 +966,6 @@ FIN_COLOR_SUELO:
     RET
 ACTUALIZAR_COLOR_SUELO ENDP
 
-
-; ========================================
-; NÚMERO ALEATORIO 0-99
-; Retorna en AL
-; ========================================
 RANDOM_100 PROC
     PUSH BX
     PUSH DX
