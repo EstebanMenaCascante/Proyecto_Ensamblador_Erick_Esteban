@@ -1,5 +1,5 @@
 DOSBox version 0.74-3
 Copyright 2002-2019 DOSBox Team, published under GNU GPL.
 ---
-CONFIG:Loading primary settings from config file C:\Users\emena\AppData\Local\Temp\asm8086_fx2ayacl\dosbox.conf
+CONFIG:Loading primary settings from config file C:\Users\emena\AppData\Local\Temp\asm8086_dc1grcgu\dosbox.conf
 MIDI:Opened device:win32
