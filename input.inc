@@ -57,6 +57,12 @@ ABRIR_INVENTARIO:
 
 MOVER_ARRIBA:
     MOV DIRECCION, 2
+    ; Verificar límite superior (Y mínimo = 25 del HUD)
+    MOV AX, JUGADOR_Y
+    CMP AX, 27              ; 25 + 2 (mínimo para no salirse)
+    JA CONTINUAR_ARRIBA     ; Si Y > 27, sí mover
+    RET                     ; Si no, salir
+CONTINUAR_ARRIBA:
     MOV AX, JUGADOR_X
     MOV JUGADOR_X_ANTERIOR, AX
     MOV AX, JUGADOR_Y
@@ -65,7 +71,10 @@ MOVER_ARRIBA:
     CALL VERIFICAR_COLISION
     JNC MOVIMIENTO_OK_ARRIBA
     CMP AL, 2
-    JMP MUERTE_POR_AGUA
+    JNE RESTAURAR_Y_ARRIBA
+    CALL PANTALLA_GAME_OVER
+    RET
+RESTAURAR_Y_ARRIBA:
     ADD JUGADOR_Y, 2
     RET
 MOVIMIENTO_OK_ARRIBA:
@@ -74,6 +83,12 @@ MOVIMIENTO_OK_ARRIBA:
 
 MOVER_ABAJO:
     MOV DIRECCION, 3
+    ; Verificar límite inferior (Y máximo = 25 + 20*16 - 16 = 329)
+    MOV AX, JUGADOR_Y
+    CMP AX, 327             ; 329 - 2 (máximo para no salirse)
+    JB CONTINUAR_ABAJO      ; Si Y < 327, sí mover
+    RET                     ; Si no, salir
+CONTINUAR_ABAJO:
     MOV AX, JUGADOR_X
     MOV JUGADOR_X_ANTERIOR, AX
     MOV AX, JUGADOR_Y
@@ -82,7 +97,10 @@ MOVER_ABAJO:
     CALL VERIFICAR_COLISION
     JNC MOVIMIENTO_OK_ABAJO
     CMP AL, 2
-    JE MUERTE_POR_AGUA
+    JNE RESTAURAR_Y_ABAJO
+    CALL PANTALLA_GAME_OVER
+    RET
+RESTAURAR_Y_ABAJO:
     SUB JUGADOR_Y, 2
     RET
 MOVIMIENTO_OK_ABAJO:
@@ -91,7 +109,12 @@ MOVIMIENTO_OK_ABAJO:
 
 MOVER_IZQUIERDA:
     MOV DIRECCION, 1
+    ; Verificar límite izquierdo (X mínimo = 0)
     MOV AX, JUGADOR_X
+    CMP AX, 2               ; 0 + 2 (mínimo para no salirse)
+    JA CONTINUAR_IZQ        ; Si X > 2, sí mover
+    RET                     ; Si no, salir
+CONTINUAR_IZQ:
     MOV JUGADOR_X_ANTERIOR, AX
     MOV AX, JUGADOR_Y
     MOV JUGADOR_Y_ANTERIOR, AX
@@ -99,7 +122,10 @@ MOVER_IZQUIERDA:
     CALL VERIFICAR_COLISION
     JNC MOVIMIENTO_OK_IZQ
     CMP AL, 2
-    JMP MUERTE_POR_AGUA
+    JNE RESTAURAR_X_IZQ
+    CALL PANTALLA_GAME_OVER
+    RET
+RESTAURAR_X_IZQ:
     ADD JUGADOR_X, 2
     RET
 MOVIMIENTO_OK_IZQ:
@@ -108,7 +134,12 @@ MOVIMIENTO_OK_IZQ:
 
 MOVER_DERECHA:
     MOV DIRECCION, 0
+    ; Verificar límite derecho (X máximo = 40*16 - 16 = 624)
     MOV AX, JUGADOR_X
+    CMP AX, 622             ; 624 - 2 (máximo para no salirse)
+    JB CONTINUAR_DER        ; Si X < 622, sí mover
+    RET                     ; Si no, salir
+CONTINUAR_DER:
     MOV JUGADOR_X_ANTERIOR, AX
     MOV AX, JUGADOR_Y
     MOV JUGADOR_Y_ANTERIOR, AX
@@ -116,7 +147,10 @@ MOVER_DERECHA:
     CALL VERIFICAR_COLISION
     JNC MOVIMIENTO_OK_DER
     CMP AL, 2
-    JE MUERTE_POR_AGUA
+    JNE RESTAURAR_X_DER
+    CALL PANTALLA_GAME_OVER
+    RET
+RESTAURAR_X_DER:
     SUB JUGADOR_X, 2
     RET
 MOVIMIENTO_OK_DER:

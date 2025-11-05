@@ -2,10 +2,10 @@
 
 
 .DATA
-    ; Mapa (ahora 40x21 = 840 bytes para ocupar pantalla EGA)
+    ; Mapa (ahora 40x20 = 800 bytes para caber con HUD de 25px)
     MAPA_ANCHO DW ?
     MAPA_ALTO DW ?
-    MAPA_DATOS DB 840 DUP(?)
+    MAPA_DATOS DB 800 DUP(?)
     MAPA_CARGADO DB 0       ; Flag para saber si el mapa ya fue generado
     NOMBRE_ARCHIVO DB 'mapa.txt', 0
     CARACTER_TEMP DB ?
@@ -28,9 +28,9 @@ CARGAR_MAPA PROC
     JE MAPA_YA_EXISTE
     
     ; Establecer dimensiones para modo EGA 640x350
-    ; 40 columnas x 21 filas con tiles de 16x16 = 640x336
+    ; 40 columnas x 20 filas con tiles de 16x16 = 640x320 (cabe en 325px disponibles con HUD)
     MOV MAPA_ANCHO, 40
-    MOV MAPA_ALTO, 21
+    MOV MAPA_ALTO, 20
     
     ; Inicializar semilla aleatoria con el reloj del sistema
     MOV AH, 2CH

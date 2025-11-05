@@ -161,12 +161,12 @@ REINTENTAR_POSICION:
     ADD DX, 16
     MOV RECURSOS[SI], DX    ; Guardar X
     
-    ; Generar Y aleatorio (16 a 320 para 336 pixels)
+    ; Generar Y aleatorio (41 a 345 para offset del HUD de 25 pixels)
     CALL NUMERO_ALEATORIO
     MOV DX, 0
     MOV CX, 304             ; 320-16
     DIV CX
-    ADD DX, 16
+    ADD DX, 41              ; 16 + 25 (offset del HUD)
     MOV RECURSOS[SI+2], DX  ; Guardar Y
     
     ; Verificar que no esté en un obstáculo
@@ -209,8 +209,10 @@ VERIFICAR_POSICION_RECURSO_VALIDA PROC
     MOV BX, AX              ; BX = columna
     
     MOV AX, RECURSOS[SI+2]
+    SUB AX, 25              ; Restar offset del HUD
     ADD AX, 8
     XOR DX, DX
+    MOV CX, 16
     DIV CX
     MOV DX, AX              ; DX = fila
     
@@ -404,6 +406,16 @@ POSITIVO_Y:
     PUSH BX
     MOV BX, RECURSOS[SI]
     MOV DX, RECURSOS[SI+2]
+    
+    ; BORRAR COMPLETAMENTE EL RECURSO dibujando pasto
+    PUSH SI
+    PUSH CX
+    MOV TILE_X, BX
+    MOV TILE_Y, DX
+    CALL BORRAR_RECURSO_COMPLETO
+    POP CX
+    POP SI
+    
     CALL EFECTO_RECOLECCION
     POP BX
     POP AX
@@ -684,3 +696,47 @@ FIN_FRUTA_REC:
     POP AX
     RET
 DIBUJAR_SPRITE_FRUTA ENDP
+
+
+; BORRAR RECURSO COMPLETO (dibujar pasto en su lugar 8x8)
+BORRAR_RECURSO_COMPLETO PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV SI, 0
+FILA_BORRAR_REC:
+    CMP SI, 8
+    JAE FIN_BORRAR_REC
+    
+    MOV BX, 0
+COL_BORRAR_REC:
+    CMP BX, 8
+    JAE FIN_FILA_BORRAR_REC
+    
+    MOV DX, TILE_Y
+    ADD DX, SI
+    MOV CX, TILE_X
+    ADD CX, BX
+    
+    ; Dibujar pasto verde sólido del mismo color del fondo
+    MOV AL, COLOR_VERDE
+    CALL ESCRIBIR_PIXEL
+    
+    INC BX
+    JMP COL_BORRAR_REC
+    
+FIN_FILA_BORRAR_REC:
+    INC SI
+    JMP FILA_BORRAR_REC
+    
+FIN_BORRAR_REC:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+BORRAR_RECURSO_COMPLETO ENDP

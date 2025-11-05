@@ -86,7 +86,7 @@ DIBUJAR_MAPA_COMPLETO PROC
     
 PROXIMA_FILA_MAPA:
     MOV AX, FILA_ACTUAL
-    CMP AX, 21          ; 21 filas
+    CMP AX, 20          ; 20 filas (para caber con HUD de 25px)
     JAE FIN_MAPA_COMPLETO
     
     MOV COLUMNA_ACTUAL, 0  ; Columna 0
@@ -147,7 +147,8 @@ OBTENER_COLOR_Y_DIBUJAR_TILE PROC
     MOV BX, 16
     MUL BX
     POP BX
-    MOV TILE_Y, AX          ; Y = fila * 16
+    ADD AX, 25          ; Offset para el HUD (25 pixels de altura)
+    MOV TILE_Y, AX          ; Y = fila * 16 + 25
     
     ; Dibujar según tipo de tile
     CMP BL, 0
