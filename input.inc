@@ -111,11 +111,20 @@ MOVIMIENTO_OK_ABAJO:
 
 MOVER_IZQUIERDA:
     MOV DIRECCION, 1
+
     ; Verificar si está en zona de portal antes de bloquear
     MOV AX, JUGADOR_X
     CMP AX, 8               ; Muy cerca del borde izquierdo
     JBE VERIFICAR_PORTAL_IZQ
     ; Movimiento normal
+
+    ; Verificar límite izquierdo (X mínimo = 0)
+    MOV AX, JUGADOR_X
+    CMP AX, 2               ; 0 + 2 (mínimo para no salirse)
+    JA CONTINUAR_IZQ        ; Si X > 2, sí mover
+    RET                     ; Si no, salir
+CONTINUAR_IZQ:
+
     MOV JUGADOR_X_ANTERIOR, AX
     MOV AX, JUGADOR_Y
     MOV JUGADOR_Y_ANTERIOR, AX
@@ -153,6 +162,12 @@ MOVER_DERECHA:
     CMP AX, 616             ; Muy cerca del borde derecho (624-8)
     JAE VERIFICAR_PORTAL_DER
     ; Movimiento normal
+    ; Verificar límite derecho (X máximo = 40*16 - 16 = 624)
+    MOV AX, JUGADOR_X
+    CMP AX, 622             ; 624 - 2 (máximo para no salirse)
+    JB CONTINUAR_DER        ; Si X < 622, sí mover
+    RET                     ; Si no, salir
+CONTINUAR_DER:
     MOV JUGADOR_X_ANTERIOR, AX
     MOV AX, JUGADOR_Y
     MOV JUGADOR_Y_ANTERIOR, AX

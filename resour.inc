@@ -723,6 +723,9 @@ COL_BORRAR_REC:
     
     ; Dibujar con el color del suelo del mapa actual
     MOV AL, COLOR_SUELO_ACTUAL
+
+    ; Dibujar pasto verde sólido del mismo color del fondo
+    MOV AL, COLOR_VERDE
     CALL ESCRIBIR_PIXEL
     
     INC BX
