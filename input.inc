@@ -57,7 +57,7 @@ ABRIR_INVENTARIO:
 
 MOVER_ARRIBA:
     MOV DIRECCION, 2
-    ; Verificar límite superior (Y mínimo = 25 del HUD)
+    ; Verificar límite superior
     MOV AX, JUGADOR_Y
     CMP AX, 27              ; 25 + 2 (mínimo para no salirse)
     JA CONTINUAR_ARRIBA     ; Si Y > 27, sí mover
@@ -84,7 +84,7 @@ MOVIMIENTO_OK_ARRIBA:
 
 MOVER_ABAJO:
     MOV DIRECCION, 3
-    ; Verificar límite inferior (Y máximo = 25 + 20*16 - 16 = 329)
+    ; Verificar límite inferior
     MOV AX, JUGADOR_Y
     CMP AX, 327             ; 329 - 2 (máximo para no salirse)
     JB CONTINUAR_ABAJO      ; Si Y < 327, sí mover
@@ -114,11 +114,11 @@ MOVER_IZQUIERDA:
 
     ; Verificar si está en zona de portal antes de bloquear
     MOV AX, JUGADOR_X
-    CMP AX, 8               ; Muy cerca del borde izquierdo
+    CMP AX, 8               
     JBE VERIFICAR_PORTAL_IZQ
     ; Movimiento normal
 
-    ; Verificar límite izquierdo (X mínimo = 0)
+    ; Verificar límite izquierdo
     MOV AX, JUGADOR_X
     CMP AX, 2               ; 0 + 2 (mínimo para no salirse)
     JA CONTINUAR_IZQ        ; Si X > 2, sí mover
@@ -139,7 +139,7 @@ RESTAURAR_X_IZQ:
     ADD JUGADOR_X, 2
     RET
 VERIFICAR_PORTAL_IZQ:
-    ; Verificar si está en la zona Y del portal (fila 10 aprox)
+    ; Verificar si está en la zona Y del portal
     CALL ESTA_EN_ZONA_PORTAL
     CMP AL, 1
     JE PERMITIR_SALIDA_IZQ
@@ -162,7 +162,7 @@ MOVER_DERECHA:
     CMP AX, 616             ; Muy cerca del borde derecho (624-8)
     JAE VERIFICAR_PORTAL_DER
     ; Movimiento normal
-    ; Verificar límite derecho (X máximo = 40*16 - 16 = 624)
+    ; Verificar límite derecho
     MOV AX, JUGADOR_X
     CMP AX, 622             ; 624 - 2 (máximo para no salirse)
     JB CONTINUAR_DER        ; Si X < 622, sí mover
@@ -182,7 +182,7 @@ RESTAURAR_X_DER:
     SUB JUGADOR_X, 2
     RET
 VERIFICAR_PORTAL_DER:
-    ; Verificar si está en la zona Y del portal (fila 10 aprox)
+    ; Verificar si está en la zona Y del portal
     CALL ESTA_EN_ZONA_PORTAL
     CMP AL, 1
     JE PERMITIR_SALIDA_DER
@@ -198,20 +198,20 @@ MOVIMIENTO_OK_DER:
     CALL VERIFICAR_CAMBIO_MAPA
     RET
 
-; ========================================
+
 ; VERIFICAR SI EL JUGADOR ESTÁ EN ZONA DE PORTAL
-; Verifica si JUGADOR_Y está en el rango del portal (fila 8-12)
+; Verifica si JUGADOR_Y está en el rango del portal
 ; Retorna: AL = 1 si está en zona de portal, 0 si no
-; ========================================
+
 ESTA_EN_ZONA_PORTAL PROC
     PUSH BX
     
-    ; Portal en filas 8-12 (Y: 153-217 con offset de 25)
+    ; Portal en filas 8-12
     ; Fila 8 * 16 + 25 = 153
     ; Fila 12 * 16 + 25 = 217
     MOV BX, JUGADOR_Y
     
-    ; ¿Está entre Y=153 y Y=217?
+    
     CMP BX, 153
     JB NO_ESTA_EN_PORTAL
     CMP BX, 217
@@ -233,11 +233,9 @@ MUERTE_POR_AGUA:
     CALL PANTALLA_GAME_OVER
     RET
 
-REDIBUJAR_PARCIAL PROC
-    ; Borrar sprite anterior del jugador
+REDIBUJAR_PARCIAL PROC 
     CALL BORRAR_SPRITE_JUGADOR
 
-    ; Dibujar jugador en nueva posición
     CALL DIBUJAR_JUGADOR
     RET
 REDIBUJAR_PARCIAL ENDP

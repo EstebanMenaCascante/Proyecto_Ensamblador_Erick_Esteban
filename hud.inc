@@ -42,25 +42,25 @@ DIBUJAR_HUD_COMPLETO PROC
     PUSH SI
     
     ; Dibujar barra horizontal en la parte superior
-    ; Barra de 640x25 pixels (toda la pantalla de ancho)
+    ; Barra de 640x25 pixels
     
-    ; Dibujar fondo de la barra (negro semi-transparente)
-    MOV DX, 0           ; Y inicial (parte superior)
-    MOV BL, 0           ; Contador de filas
+    ; Dibujar fondo de la barra
+    MOV DX, 0           
+    MOV BL, 0          
     
 FILA_BARRA_HUD:
     CMP BL, 25
     JAE FIN_BARRA_HUD
     
-    MOV CX, 0           ; X inicial
+    MOV CX, 0          
     PUSH BX
-    MOV BX, 0           ; Contador de columnas
+    MOV BX, 0           
     
 COLUMNA_BARRA_HUD:
     CMP BX, 640
     JAE FIN_FILA_BARRA_HUD
     
-    MOV AL, 0           ; Color negro
+    MOV AL, 0           
     CALL ESCRIBIR_PIXEL
     
     INC CX
@@ -103,10 +103,7 @@ DIBUJAR_CONTADOR_RECURSOS PROC
     POP AX
     
     ; Posicionar cursor y escribir en modo texto sobre gráficos
-    ; Usando INT 10h función 13h (escribir string en modo gráfico)
     
-    ; === PIEDRA ===
-    ; Icono gris
     MOV CX, 10
     MOV DX, 8
     MOV AL, 7           ; Gris claro
@@ -117,7 +114,7 @@ DIBUJAR_CONTADOR_RECURSOS PROC
     MOV AH, 13H
     MOV AL, 1
     MOV BH, 0
-    MOV BL, 15          ; Blanco brillante
+    MOV BL, 15          
     MOV CX, 2
     MOV DH, 0
     MOV DL, 3
@@ -136,7 +133,7 @@ DIBUJAR_CONTADOR_RECURSOS PROC
     MOV AH, 13H
     MOV AL, 1
     MOV BH, 0
-    MOV BL, 14          ; Amarillo
+    MOV BL, 14          
     MOV CX, 3
     MOV DH, 0
     MOV DL, 7
@@ -145,11 +142,10 @@ DIBUJAR_CONTADOR_RECURSOS PROC
     LEA BP, TXT_BARRA_15
     INT 10H
     
-    ; === MADERA ===
-    ; Icono cyan (aguamarina)
+    ;MADERA 
     MOV CX, 90
     MOV DX, 8
-    MOV AL, 11          ; Cyan/aguamarina (mismo que la madera del juego)
+    MOV AL, 11          
     MOV BL, 10
     CALL DIBUJAR_CUADRADO_SIMPLE
     
@@ -185,11 +181,10 @@ DIBUJAR_CONTADOR_RECURSOS PROC
     LEA BP, TXT_BARRA_15
     INT 10H
     
-    ; === FRUTA ===
-    ; Icono rojo
+    ;FRUTA
     MOV CX, 170
     MOV DX, 8
-    MOV AL, 12          ; Rojo
+    MOV AL, 12        
     MOV BL, 10
     CALL DIBUJAR_CUADRADO_SIMPLE
     
@@ -225,17 +220,16 @@ DIBUJAR_CONTADOR_RECURSOS PROC
     LEA BP, TXT_BARRA_15
     INT 10H
     
-    ; === TOTAL ===
-    ; Calcular total
+    ;TOTAL
     MOV AL, INVENTARIO[0]
     ADD AL, INVENTARIO[1]
     ADD AL, INVENTARIO[2]
     
-    ; Icono amarillo
+    
     MOV CX, 250
     MOV DX, 8
     PUSH AX
-    MOV AL, 14          ; Amarillo
+    MOV AL, 14          
     MOV BL, 10
     CALL DIBUJAR_CUADRADO_SIMPLE
     POP AX
@@ -309,7 +303,7 @@ MOSTRAR_NUMERO_HUD PROC
     MOV AH, 13H
     MOV AL, 1
     MOV BH, 0
-    MOV BL, 15          ; Blanco brillante
+    MOV BL, 15         
     MOV CX, 2
     MOV DH, 0
     ; DL ya tiene la columna
@@ -409,7 +403,6 @@ DIBUJAR_NUMERO_SIMPLE PROC
     PUSH CX
     PUSH DX
     
-    ; Dibujar representación simple del número
     ; Cada número es un conjunto de pixels
     
     CMP AL, 0
@@ -532,10 +525,10 @@ MOSTRAR_INVENTARIO_COMPLETO PROC
     MOV AX, 0003H
     INT 10H
     
-    ; Establecer color de fondo azul oscuro
+    
     MOV AH, 06H
     MOV AL, 0
-    MOV BH, 1FH         ; Fondo azul, texto blanco
+    MOV BH, 1FH        
     MOV CX, 0
     MOV DX, 184FH
     INT 10H
@@ -550,7 +543,7 @@ MOSTRAR_INVENTARIO_COMPLETO PROC
     LEA DX, TXT_INVENTARIO_TITLE
     INT 21H
     
-    ; Línea separadora
+    
     MOV AH, 02H
     MOV DH, 4
     MOV DL, 20
@@ -562,7 +555,7 @@ LINEA_SEP:
     INT 21H
     LOOP LINEA_SEP
     
-    ; === PIEDRA (Mineral) ===
+    ;PIEDRA
     MOV AH, 02H
     MOV DH, 7
     MOV DL, 25
@@ -571,7 +564,7 @@ LINEA_SEP:
     LEA DX, TXT_MINERAL
     INT 21H
     
-    ; Cantidad (convertir número correctamente)
+    ; Cantidad
     MOV AL, INVENTARIO[0]
     CALL MOSTRAR_NUMERO_DOS_DIGITOS_INV
     
@@ -588,7 +581,7 @@ LINEA_SEP:
     MOV AH, 02H
     INT 21H
     
-    ; === MADERA ===
+    ;MADERA
     MOV AH, 02H
     MOV DH, 10
     MOV DL, 25
@@ -597,7 +590,7 @@ LINEA_SEP:
     LEA DX, TXT_MADERA
     INT 21H
     
-    ; Cantidad (convertir número correctamente)
+    ; Cantidad
     MOV AL, INVENTARIO[1]
     CALL MOSTRAR_NUMERO_DOS_DIGITOS_INV
     
@@ -623,7 +616,7 @@ LINEA_SEP:
     LEA DX, TXT_FRUTA
     INT 21H
     
-    ; Cantidad (convertir número correctamente)
+    ; Cantidad
     MOV AL, INVENTARIO[2]
     CALL MOSTRAR_NUMERO_DOS_DIGITOS_INV
     
@@ -640,7 +633,7 @@ LINEA_SEP:
     MOV AH, 02H
     INT 21H
     
-    ; === TOTAL RECOLECTADO ===
+    ;TOTAL RECOLECTADO
     MOV AH, 02H
     MOV DH, 16
     MOV DL, 25
@@ -670,7 +663,7 @@ LINEA_SEP:
     MOV AH, 02H
     INT 21H
     
-    ; === PUNTUACIÓN ===
+    ;PUNTUACIÓN
     MOV AH, 02H
     MOV DH, 19
     MOV DL, 25
