@@ -5,12 +5,23 @@
     COLOR_NEGRO EQU 0
     COLOR_AZUL EQU 1
     COLOR_VERDE EQU 2
+    COLOR_CYAN EQU 3
     COLOR_ROJO EQU 4
+    COLOR_MAGENTA EQU 5
     COLOR_MARRON EQU 6
-    COLOR_VERDE_OSCURO EQU 2  ; Verde oscuro para madera (distinto del piso)
+    COLOR_GRIS_CLARO EQU 7
     COLOR_GRIS EQU 8
+    COLOR_AZUL_CLARO EQU 9
+    COLOR_VERDE_CLARO EQU 10
+    COLOR_CYAN_CLARO EQU 11
+    COLOR_ROJO_CLARO EQU 12
+    COLOR_MAGENTA_CLARO EQU 13
     COLOR_AMARILLO EQU 14
     COLOR_BLANCO EQU 15
+    
+    COLOR_VERDE_OSCURO EQU 2  ; Verde oscuro para madera
+    COLOR_ARENA EQU 14        ; Amarillo para arena del desierto
+    COLOR_TIERRA EQU 6        ; Marrón para tierra de montaña
     
     ; Variables temporales para dibujar tiles
     TILE_X DW 0
@@ -18,6 +29,9 @@
     TILE_COLOR DB 0
     FILA_ACTUAL DW 0
     COLUMNA_ACTUAL DW 0
+    
+    ; Color del suelo según mapa actual
+    COLOR_SUELO_ACTUAL DB 2   ; Por defecto verde (bosque)
     
     ; Segmento de memoria de video EGA 640x350x16
     VIDEO_SEG EQU 0A000H
@@ -86,7 +100,7 @@ DIBUJAR_MAPA_COMPLETO PROC
     
 PROXIMA_FILA_MAPA:
     MOV AX, FILA_ACTUAL
-    CMP AX, 21          ; 21 filas
+    CMP AX, 20          ; 20 filas (para caber con HUD de 25px)
     JAE FIN_MAPA_COMPLETO
     
     MOV COLUMNA_ACTUAL, 0  ; Columna 0
@@ -147,7 +161,8 @@ OBTENER_COLOR_Y_DIBUJAR_TILE PROC
     MOV BX, 16
     MUL BX
     POP BX
-    MOV TILE_Y, AX          ; Y = fila * 16
+    ADD AX, 25          ; Offset para el HUD (25 pixels de altura)
+    MOV TILE_Y, AX          ; Y = fila * 16 + 25
     
     ; Dibujar según tipo de tile
     CMP BL, 0
@@ -160,6 +175,8 @@ OBTENER_COLOR_Y_DIBUJAR_TILE PROC
     JE DIBUJAR_PASTO        ; Hierba = pasto
     CMP BL, 4
     JE DIBUJAR_ARBOL_TILE   ; Árboles del mapa
+    CMP BL, 5
+    JE DIBUJAR_PORTAL_TILE  ; Portales brillantes
     JMP DIBUJAR_PASTO       ; Por defecto pasto
     
 DIBUJAR_PASTO:
@@ -172,6 +189,10 @@ DIBUJAR_ROCA:
     
 DIBUJAR_ARBOL_TILE:
     CALL DIBUJAR_SPRITE_ARBOL_MAPA
+    JMP FIN_DIBUJAR_TILE_TEXTURA
+    
+DIBUJAR_PORTAL_TILE:
+    CALL DIBUJAR_PORTAL
     JMP FIN_DIBUJAR_TILE_TEXTURA
     
 DIBUJAR_AGUA_TILE:
@@ -291,10 +312,10 @@ CONTINUAR_COLUMNA_PASTO:
     MOV CX, TILE_X
     ADD CX, BX
     
-    ; Mayoría verde base, con toques sutiles de verde oscuro
-    MOV AL, COLOR_VERDE
+    ; Usar color del suelo según el mapa actual
+    MOV AL, COLOR_SUELO_ACTUAL
     
-    ; Puntos de verde oscuro dispersos naturalmente
+    ; Puntos de variación de tono (más oscuros)
     CMP SI, 1
     JNE NO_F1_PASTO
     CMP BX, 4
@@ -350,7 +371,26 @@ NO_F13_PASTO:
     JMP PIXEL_PASTO
     
 OSCURO_PASTO:
-    MOV AL, COLOR_VERDE_OSCURO
+    ; Usar un tono más oscuro del color actual
+    ; Verde (2) → Verde oscuro (2, mismo)
+    ; Gris (8) → Negro (0)
+    ; Marrón (6) → Gris oscuro (8)
+    MOV AL, COLOR_SUELO_ACTUAL
+    
+    CMP AL, 8               ; ¿Es gris (montaña)?
+    JNE NO_ES_GRIS
+    MOV AL, 0               ; Usar negro para variación lodosa
+    JMP PIXEL_PASTO
+NO_ES_GRIS:
+    
+    CMP AL, 6               ; ¿Es marrón (desierto)?
+    JNE NO_ES_MARRON
+    MOV AL, 8               ; Usar gris para variación de arena
+    JMP PIXEL_PASTO
+NO_ES_MARRON:
+    
+    ; Verde o cualquier otro → mantener verde oscuro
+    MOV AL, 2
     
 PIXEL_PASTO:
     CALL ESCRIBIR_PIXEL
@@ -620,3 +660,109 @@ FIN_ARBOL_MAPA:
     POP AX
     RET
 DIBUJAR_SPRITE_ARBOL_MAPA ENDP
+
+
+; ========================================
+; DIBUJAR PORTAL (marco brillante con efecto mágico)
+; ========================================
+DIBUJAR_PORTAL PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    MOV SI, 0
+FILA_PORTAL:
+    CMP SI, 16
+    JAE FIN_PORTAL
+    
+    MOV BX, 0
+COLUMNA_PORTAL:
+    CMP BX, 16
+    JB CONTINUAR_PIXEL_PORTAL
+    JMP FIN_FILA_PORTAL
+    
+CONTINUAR_PIXEL_PORTAL:
+    MOV DX, TILE_Y
+    ADD DX, SI
+    MOV CX, TILE_X
+    ADD CX, BX
+    
+    ; Color base del portal (fondo oscuro para contraste)
+    MOV AL, 0           ; Negro como base
+    
+    ; Marco exterior (bordes del tile) - Amarillo brillante
+    CMP SI, 0
+    JE MARCO_PORTAL
+    CMP SI, 15
+    JE MARCO_PORTAL
+    CMP BX, 0
+    JE MARCO_PORTAL
+    CMP BX, 15
+    JNE CHEQUEAR_MARCO_INTERNO
+    
+MARCO_PORTAL:
+    MOV AL, COLOR_AMARILLO      ; Amarillo brillante
+    JMP PIXEL_PORTAL
+    
+CHEQUEAR_MARCO_INTERNO:
+    ; Marco interior - Cyan brillante (efecto mágico)
+    CMP SI, 2
+    JE MARCO_INTERNO
+    CMP SI, 13
+    JE MARCO_INTERNO
+    CMP BX, 2
+    JE MARCO_INTERNO
+    CMP BX, 13
+    JNE CHEQUEAR_CENTRO
+    
+MARCO_INTERNO:
+    MOV AL, COLOR_CYAN_CLARO    ; Cyan brillante
+    JMP PIXEL_PORTAL
+    
+CHEQUEAR_CENTRO:
+    ; Centro - Relleno con efecto mágico brillante
+    ; Área central (4x4 píxeles blancos brillantes)
+    CMP SI, 6
+    JB RELLENO_CYAN
+    CMP SI, 10
+    JA RELLENO_CYAN
+    CMP BX, 6
+    JB RELLENO_CYAN
+    CMP BX, 10
+    JA RELLENO_CYAN
+    
+    ; Centro mágico blanco/cyan
+    MOV AL, COLOR_BLANCO
+    CMP SI, 7
+    JNE TEST_CYAN_CENTRO
+    MOV AL, COLOR_CYAN_CLARO
+TEST_CYAN_CENTRO:
+    CMP SI, 9
+    JNE PIXEL_PORTAL
+    MOV AL, COLOR_CYAN_CLARO
+    JMP PIXEL_PORTAL
+    
+RELLENO_CYAN:
+    ; Relleno intermedio entre marcos - Cyan oscuro
+    MOV AL, COLOR_CYAN
+    
+PIXEL_PORTAL:
+    CALL ESCRIBIR_PIXEL
+    
+    INC BX
+    JMP COLUMNA_PORTAL
+    
+FIN_FILA_PORTAL:
+    INC SI
+    JMP FILA_PORTAL
+    
+FIN_PORTAL:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DIBUJAR_PORTAL ENDP

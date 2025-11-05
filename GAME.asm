@@ -4,6 +4,7 @@
 ; Incluir archivos de funciones
 INCLUDE Graph.INC
 INCLUDE map.INC
+INCLUDE mapas.INC
 INCLUDE player.INC
 INCLUDE resour.INC
 INCLUDE input.INC
@@ -61,6 +62,9 @@ MAIN PROC
     
     ; Dibujar HUD primero (en el fondo)
     CALL DIBUJAR_HUD_COMPLETO
+    
+    ; Inicializar sistema de múltiples mapas
+    CALL INICIALIZAR_MAPAS
     
     ; Cargar y dibujar mapa y recursos
     CALL CARGAR_MAPA

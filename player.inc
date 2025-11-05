@@ -2,10 +2,10 @@
 
 
 .DATA
-    JUGADOR_X DW 320        ; Centro horizontal de 640
-    JUGADOR_Y DW 160        ; Centro vertical para mapa 21 filas
+    JUGADOR_X DW 320        ; Centro horizontal (columna 20 * 16)
+    JUGADOR_Y DW 185        ; Fila 10 * 16 + 25 offset = 185
     JUGADOR_X_ANTERIOR DW 320
-    JUGADOR_Y_ANTERIOR DW 160
+    JUGADOR_Y_ANTERIOR DW 185
     DIRECCION DB 0
 
 .CODE
@@ -13,10 +13,10 @@
 ; INICIALIZAR JUGADOR
 
 INICIALIZAR_JUGADOR PROC
-    MOV JUGADOR_X, 320          ; Centro de 640
-    MOV JUGADOR_Y, 160          ; Centro de mapa 21 filas
+    MOV JUGADOR_X, 320          ; Centro horizontal
+    MOV JUGADOR_Y, 185          ; Fila 10 del mapa + offset del HUD
     MOV JUGADOR_X_ANTERIOR, 320
-    MOV JUGADOR_Y_ANTERIOR, 160
+    MOV JUGADOR_Y_ANTERIOR, 185
     MOV DIRECCION, 0
     RET
 INICIALIZAR_JUGADOR ENDP
@@ -177,6 +177,7 @@ BORRAR_JUGADOR_ANTERIOR PROC
     MOV SI, AX
     
     MOV AX, JUGADOR_Y_ANTERIOR
+    SUB AX, 25          ; Restar offset del HUD
     XOR DX, DX
     DIV CX              ; AX = fila del tile
     MOV DI, AX
@@ -191,7 +192,7 @@ BORRAR_JUGADOR_ANTERIOR PROC
     ; Obtener tipo de tile
     MOV BL, BYTE PTR MAPA_DATOS[BX]
     
-    ; Calcular TILE_X y TILE_Y
+    ; Calcular TILE_X y TILE_Y (con offset del HUD)
     MOV AX, SI
     MOV CX, 16
     MUL CX
@@ -199,6 +200,7 @@ BORRAR_JUGADOR_ANTERIOR PROC
     
     MOV AX, DI
     MUL CX
+    ADD AX, 25          ; Agregar offset del HUD
     MOV TILE_Y, AX
     
     ; Redibujar el tile según su tipo
@@ -241,8 +243,8 @@ BORRAR_COLUMNA:
     MOV CX, TILE_X
     ADD CX, DI
 
-    ; Color de fondo
-    MOV AL, 2
+    ; Color de fondo según el mapa actual
+    MOV AL, COLOR_SUELO_ACTUAL
     CALL ESCRIBIR_PIXEL
 
     INC DI
@@ -386,11 +388,12 @@ ACTUALIZAR_VIEWPORT ENDP
 ; VERIFICAR COLISIONES
 
 VERIFICAR_COLISION PROC
-    ; Convertir posici�n a coordenadas de mapa
+    ; Convertir posición a coordenadas de mapa
     MOV AX, JUGADOR_X
     MOV BX, JUGADOR_Y
     ADD AX, 8
     ADD BX, 8
+    SUB BX, 25              ; Restar offset del HUD
     
     MOV CX, 16
     XOR DX, DX

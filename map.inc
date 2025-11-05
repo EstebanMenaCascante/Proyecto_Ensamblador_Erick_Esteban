@@ -2,10 +2,10 @@
 
 
 .DATA
-    ; Mapa (ahora 40x21 = 840 bytes para ocupar pantalla EGA)
+    ; Mapa (ahora 40x20 = 800 bytes para caber con HUD de 25px)
     MAPA_ANCHO DW ?
     MAPA_ALTO DW ?
-    MAPA_DATOS DB 840 DUP(?)
+    MAPA_DATOS DB 800 DUP(?)
     MAPA_CARGADO DB 0       ; Flag para saber si el mapa ya fue generado
     NOMBRE_ARCHIVO DB 'mapa.txt', 0
     CARACTER_TEMP DB ?
@@ -27,10 +27,14 @@ CARGAR_MAPA PROC
     CMP MAPA_CARGADO, 1
     JE MAPA_YA_EXISTE
     
+    ; Verificar si ya se inicializaron los mapas múltiples
+    CMP MAPA_PRINCIPAL_GENERADO, 1
+    JE MAPAS_MULTI_YA_LISTOS
+    
     ; Establecer dimensiones para modo EGA 640x350
-    ; 40 columnas x 21 filas con tiles de 16x16 = 640x336
+    ; 40 columnas x 20 filas con tiles de 16x16 = 640x320 (cabe en 325px disponibles con HUD)
     MOV MAPA_ANCHO, 40
-    MOV MAPA_ALTO, 21
+    MOV MAPA_ALTO, 20
     
     ; Inicializar semilla aleatoria con el reloj del sistema
     MOV AH, 2CH
@@ -43,6 +47,7 @@ CARGAR_MAPA PROC
     ; Generar mapa aleatorio (solo la primera vez)
     CALL GENERAR_MAPA_ALEATORIO
     
+MAPAS_MULTI_YA_LISTOS:
     ; Marcar como cargado
     MOV BYTE PTR MAPA_CARGADO, 1
     
@@ -257,6 +262,50 @@ NUMERO_ALEATORIO PROC
 NUMERO_ALEATORIO ENDP
 
 
+; VERIFICAR SI POSICIÓN ESTÁ EN ZONA DE PORTAL
+; Entrada: SI = índice en MAPA_DATOS (0-799)
+; Salida: AL = 1 si está en zona de portal, 0 si no
+VERIFICAR_ZONA_PORTAL PROC
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    
+    ; Convertir índice a columna y fila
+    MOV AX, SI
+    MOV BX, 40
+    XOR DX, DX
+    DIV BX
+    ; AX = fila, DX = columna
+    
+    ; Verificar si está en filas 7-13 (zona de portales)
+    CMP AX, 7
+    JB NO_ES_ZONA_PORTAL
+    CMP AX, 13
+    JA NO_ES_ZONA_PORTAL
+    
+    ; Verificar portal izquierdo (columnas 0-3)
+    CMP DX, 4
+    JB ES_ZONA_PORTAL
+    
+    ; Verificar portal derecho (columnas 36-39)
+    CMP DX, 36
+    JAE ES_ZONA_PORTAL
+    
+NO_ES_ZONA_PORTAL:
+    MOV AL, 0
+    JMP FIN_VERIFICAR_ZONA_PORTAL
+    
+ES_ZONA_PORTAL:
+    MOV AL, 1
+    
+FIN_VERIFICAR_ZONA_PORTAL:
+    POP DX
+    POP CX
+    POP BX
+    RET
+VERIFICAR_ZONA_PORTAL ENDP
+
+
 ; COLOCAR OBSTÁCULOS DE PIEDRA (grupos pequeños)
 
 COLOCAR_OBSTACULOS_PIEDRA PROC
@@ -296,10 +345,16 @@ SIGUIENTE_GRUPO_PIEDRA:
     
     ; Verificar que no esté muy cerca del centro (spawn del jugador)
     CMP SI, 400
-    JB POSICION_OK_PIEDRA
+    JB POSICION_OK_PIEDRA_1
     CMP SI, 450
-    JA POSICION_OK_PIEDRA
+    JA POSICION_OK_PIEDRA_1
     JMP SIGUIENTE_GRUPO_PIEDRA      ; Muy cerca del jugador
+    
+POSICION_OK_PIEDRA_1:
+    ; Verificar que no esté en zona de portal
+    CALL VERIFICAR_ZONA_PORTAL
+    CMP AL, 1
+    JE SIGUIENTE_GRUPO_PIEDRA       ; Está en zona de portal, buscar otra posición
     
 POSICION_OK_PIEDRA:
     ; Colocar grupo de 2x2 o 3x2 piedras
@@ -376,10 +431,16 @@ CONTINUAR_AGUA:
     
     ; Verificar spawn del jugador
     CMP SI, 400
-    JB POSICION_OK_AGUA
+    JB POSICION_OK_AGUA_1
     CMP SI, 450
-    JA POSICION_OK_AGUA
+    JA POSICION_OK_AGUA_1
     JMP SIGUIENTE_GRUPO_AGUA
+    
+POSICION_OK_AGUA_1:
+    ; Verificar que no esté en zona de portal
+    CALL VERIFICAR_ZONA_PORTAL
+    CMP AL, 1
+    JE SIGUIENTE_GRUPO_AGUA
     
 POSICION_OK_AGUA:
     ; Colocar grupo pequeño de agua (2x2 máximo)
@@ -451,6 +512,11 @@ SIGUIENTE_HIERBA:
     POP DX
     ADD AX, DX
     MOV SI, AX
+    
+    ; Verificar que no esté en zona de portal
+    CALL VERIFICAR_ZONA_PORTAL
+    CMP AL, 1
+    JE SIGUIENTE_HIERBA
     
     ; Colocar solo si es tierra (no sobrescribir obstáculos)
     CMP SI, 840
