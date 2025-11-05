@@ -241,7 +241,7 @@ BORRAR_COLUMNA:
     MOV CX, TILE_X
     ADD CX, DI
 
-    ; Color de fondo (puedes cambiarlo dinámicamente si quieres)
+    ; Color de fondo
     MOV AL, 2
     CALL ESCRIBIR_PIXEL
 
