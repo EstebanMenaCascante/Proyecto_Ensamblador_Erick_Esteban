@@ -2,14 +2,15 @@
 
 
 .DATA
-    ; Mapa (ahora 40x21 = 840 bytes para ocupar toda la pantalla EGA)
+    ; Mapa (ahora 40x20 = 800 bytes para caber con HUD de 25px)
     MAPA_ANCHO DW ?
     MAPA_ALTO DW ?
-    MAPA_DATOS DB 840 DUP(?)
+    MAPA_DATOS DB 800 DUP(?)
+    MAPA_CARGADO DB 0   
     NOMBRE_ARCHIVO DB 'mapa.txt', 0
     CARACTER_TEMP DB ?
     
-    ; Viewport (ventana visible del mapa)
+    ; Viewport
     VIEWPORT_X DW 0
     VIEWPORT_Y DW 0
     
@@ -19,17 +20,20 @@
 
 .CODE
 
-; CARGAR MAPA (ahora genera aleatoriamente)
+; CARGAR MAPA 
 
 CARGAR_MAPA PROC
+    ; Verificar si el mapa ya fue generado
+    CMP MAPA_CARGADO, 1
+    JE MAPA_YA_EXISTE
+    
+    ; Verificar si ya se inicializaron los mapas múltiples
+    CMP MAPA_PRINCIPAL_GENERADO, 1
+    JE MAPAS_MULTI_YA_LISTOS
+    
     ; Establecer dimensiones para modo EGA 640x350
-    ; Usar tiles más grandes para aprovechar la pantalla
-    ; 640 pixels / 32 = 20 columnas (tiles de 32x32)
-    ; 320 pixels / 16 = 20 filas (tiles de 16x16)
-    ; O mantener 20x15 con tiles de 32x23 para llenar mejor
-    ; Por ahora usamos 40x21 con tiles de 16x16 = 640x336
     MOV MAPA_ANCHO, 40
-    MOV MAPA_ALTO, 21
+    MOV MAPA_ALTO, 20
     
     ; Inicializar semilla aleatoria con el reloj del sistema
     MOV AH, 2CH
@@ -42,8 +46,112 @@ CARGAR_MAPA PROC
     ; Generar mapa aleatorio
     CALL GENERAR_MAPA_ALEATORIO
     
+MAPAS_MULTI_YA_LISTOS:
+    ; Marcar como cargado
+    MOV BYTE PTR MAPA_CARGADO, 1
+    
+MAPA_YA_EXISTE:
     RET
 CARGAR_MAPA ENDP
+
+
+; LEER MAPA DESDE ARCHIVO
+
+LEER_MAPA_DESDE_ARCHIVO PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    
+    ; Abrir archivo
+    MOV AH, 3DH
+    MOV AL, 0           ; Modo lectura
+    LEA DX, NOMBRE_ARCHIVO
+    INT 21H
+    JC ERROR_ABRIR
+    
+    MOV BX, AX          ; Handle del archivo
+    
+    ; Saltar primera línea
+SALTAR_PRIMERA_LINEA:
+    MOV AH, 3FH
+    MOV CX, 1
+    LEA DX, CARACTER_TEMP
+    INT 21H
+    JC ERROR_LEER
+    
+    CMP CARACTER_TEMP, 10   ; Salto de línea
+    JNE SALTAR_PRIMERA_LINEA
+    
+    ; Leer mapa línea por línea
+    MOV SI, 0           
+    
+LEER_LINEA:
+    CMP SI, 300         
+    JAE FIN_LECTURA
+    
+LEER_CARACTER:
+    MOV AH, 3FH
+    MOV CX, 1
+    LEA DX, CARACTER_TEMP
+    INT 21H
+    JC ERROR_LEER
+    
+    ; Verificar fin de archivo
+    CMP AX, 0
+    JE FIN_LECTURA
+    
+    ; Si es espacio o salto de línea, ignorar
+    CMP CARACTER_TEMP, ' '
+    JE LEER_CARACTER
+    CMP CARACTER_TEMP, 10
+    JE LEER_CARACTER
+    CMP CARACTER_TEMP, 13
+    JE LEER_CARACTER
+    
+    ; Si es 'R', terminamos el mapa
+    CMP CARACTER_TEMP, 'R'
+    JE FIN_LECTURA
+    
+    ; Convertir ASCII a número (0-3)
+    MOV AL, CARACTER_TEMP
+    SUB AL, '0'
+    
+    ; Guardar en mapa
+    MOV MAPA_DATOS[SI], AL
+    INC SI
+    JMP LEER_CARACTER
+    
+FIN_LECTURA:
+    ; Cerrar archivo
+    MOV AH, 3EH
+    INT 21H
+    
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+    
+ERROR_ABRIR:
+ERROR_LEER:
+    ; Si hay error, llenar con tierra
+    MOV SI, 0
+    MOV CX, 300
+LLENAR_TIERRA_ERROR:
+    MOV MAPA_DATOS[SI], 0
+    INC SI
+    LOOP LLENAR_TIERRA_ERROR
+    
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+LEER_MAPA_DESDE_ARCHIVO ENDP
 
 
 ; GENERAR MAPA ALEATORIO JUGABLE
@@ -63,19 +171,19 @@ LLENAR_TIERRA:
     INC SI
     LOOP LLENAR_TIERRA
     
-    ; 2. NO crear bordes (para usar todo el espacio)
-    ; CALL CREAR_BORDES  ; Comentado para ocupar toda la ventana
+    ; 2. NO crear bordes 
+    ; CALL CREAR_BORDES 
     
     ; 3. Colocar menos obstáculos de piedra
-    MOV CONTADOR_OBSTACULOS, 7      ; 7 grupos de piedras (reducido)
+    MOV CONTADOR_OBSTACULOS, 7      
     CALL COLOCAR_OBSTACULOS_PIEDRA
     
     ; 4. Colocar menos obstáculos de agua
-    MOV CONTADOR_OBSTACULOS, 4      ; 4 grupos de agua (reducido)
+    MOV CONTADOR_OBSTACULOS, 4     
     CALL COLOCAR_OBSTACULOS_AGUA
     
     ; 5. Colocar hierba decorativa
-    MOV CONTADOR_OBSTACULOS, 35     ; Más hierba para el mapa más grande
+    MOV CONTADOR_OBSTACULOS, 35     
     CALL COLOCAR_HIERBA
     
     POP SI
@@ -95,14 +203,14 @@ CREAR_BORDES PROC
     
     ; Borde superior
     MOV SI, 0
-    MOV CX, 40          ; 40 columnas
+    MOV CX, 40          
 BORDE_SUP:
     MOV MAPA_DATOS[SI], 1
     INC SI
     LOOP BORDE_SUP
     
     ; Borde inferior
-    MOV SI, 800         ; Fila 20 * 40
+    MOV SI, 800        
     MOV CX, 40  
 BORDE_INF:
     MOV MAPA_DATOS[SI], 1
@@ -153,7 +261,51 @@ NUMERO_ALEATORIO PROC
 NUMERO_ALEATORIO ENDP
 
 
-; COLOCAR OBSTÁCULOS DE PIEDRA (grupos pequeños)
+; VERIFICAR SI POSICIÓN ESTÁ EN ZONA DE PORTAL
+; Entrada: SI = índice en MAPA_DATOS (0-799)
+; Salida: AL = 1 si está en zona de portal, 0 si no
+VERIFICAR_ZONA_PORTAL PROC
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    
+    ; Convertir índice a columna y fila
+    MOV AX, SI
+    MOV BX, 40
+    XOR DX, DX
+    DIV BX
+    ; AX = fila, DX = columna
+    
+    ; Verificar si está en filas 7-13
+    CMP AX, 7
+    JB NO_ES_ZONA_PORTAL
+    CMP AX, 13
+    JA NO_ES_ZONA_PORTAL
+    
+    ; Verificar portal izquierdo
+    CMP DX, 4
+    JB ES_ZONA_PORTAL
+    
+    ; Verificar portal derecho
+    CMP DX, 36
+    JAE ES_ZONA_PORTAL
+    
+NO_ES_ZONA_PORTAL:
+    MOV AL, 0
+    JMP FIN_VERIFICAR_ZONA_PORTAL
+    
+ES_ZONA_PORTAL:
+    MOV AL, 1
+    
+FIN_VERIFICAR_ZONA_PORTAL:
+    POP DX
+    POP CX
+    POP BX
+    RET
+VERIFICAR_ZONA_PORTAL ENDP
+
+
+; COLOCAR OBSTÁCULOS DE PIEDRA
 
 COLOCAR_OBSTACULOS_PIEDRA PROC
     PUSH AX
@@ -167,20 +319,20 @@ SIGUIENTE_GRUPO_PIEDRA:
     JE FIN_PIEDRAS
     DEC CONTADOR_OBSTACULOS
     
-    ; Generar posición aleatoria (en todo el mapa)
+    ; Generar posición aleatoria
     CALL NUMERO_ALEATORIO
     MOV DX, 0
-    MOV BX, 38          ; Ancho útil (40-2)
+    MOV BX, 38          ; Ancho útil
     DIV BX
-    ADD DX, 1           ; +1 para dejar un poco de margen
-    PUSH DX             ; Columna
+    ADD DX, 1           
+    PUSH DX             
     
     CALL NUMERO_ALEATORIO
     MOV DX, 0
     MOV BX, 19          ; Alto útil (21-2)
     DIV BX
-    ADD DX, 1           ; +1 para dejar un poco de margen
-    MOV BX, DX          ; Fila
+    ADD DX, 1           
+    MOV BX, DX          
     
     ; Calcular posición en el mapa
     MOV AX, BX
@@ -190,12 +342,18 @@ SIGUIENTE_GRUPO_PIEDRA:
     ADD AX, DX
     MOV SI, AX
     
-    ; Verificar que no esté muy cerca del centro (spawn del jugador)
+    ; Verificar que no esté muy cerca del centro
     CMP SI, 400
-    JB POSICION_OK_PIEDRA
+    JB POSICION_OK_PIEDRA_1
     CMP SI, 450
-    JA POSICION_OK_PIEDRA
+    JA POSICION_OK_PIEDRA_1
     JMP SIGUIENTE_GRUPO_PIEDRA      ; Muy cerca del jugador
+    
+POSICION_OK_PIEDRA_1:
+    ; Verificar que no esté en zona de portal
+    CALL VERIFICAR_ZONA_PORTAL
+    CMP AL, 1
+    JE SIGUIENTE_GRUPO_PIEDRA       ; Está en zona de portal, buscar otra posición
     
 POSICION_OK_PIEDRA:
     ; Colocar grupo de 2x2 o 3x2 piedras
@@ -212,7 +370,7 @@ COLOCAR_COLUMNA_PIEDRA:
     CMP SI, 840
     JAE SIGUIENTE_PIEDRA
     MOV BYTE PTR MAPA_DATOS[SI], 1
-    ADD SI, 40          ; Siguiente fila (40 columnas)
+    ADD SI, 40          ; Siguiente fila
 SIGUIENTE_PIEDRA:
     LOOP COLOCAR_COLUMNA_PIEDRA
     
@@ -232,7 +390,7 @@ FIN_PIEDRAS:
 COLOCAR_OBSTACULOS_PIEDRA ENDP
 
 
-; COLOCAR OBSTÁCULOS DE AGUA (grupos pequeños)
+; COLOCAR OBSTÁCULOS DE AGUA
 
 COLOCAR_OBSTACULOS_AGUA PROC
     PUSH AX
@@ -243,10 +401,12 @@ COLOCAR_OBSTACULOS_AGUA PROC
     
 SIGUIENTE_GRUPO_AGUA:
     CMP CONTADOR_OBSTACULOS, 0
-    JE FIN_AGUA
+    JNE CONTINUAR_AGUA
+    JMP FIN_AGUA
+CONTINUAR_AGUA:
     DEC CONTADOR_OBSTACULOS
     
-    ; Generar posición aleatoria (en todo el mapa)
+    ; Generar posición aleatoria
     CALL NUMERO_ALEATORIO
     MOV DX, 0
     MOV BX, 38
@@ -256,7 +416,7 @@ SIGUIENTE_GRUPO_AGUA:
     
     CALL NUMERO_ALEATORIO
     MOV DX, 0
-    MOV BX, 19
+    MOV BX, 19          ; Alto útil (21-2)
     DIV BX
     ADD DX, 1
     MOV BX, DX
@@ -270,13 +430,19 @@ SIGUIENTE_GRUPO_AGUA:
     
     ; Verificar spawn del jugador
     CMP SI, 400
-    JB POSICION_OK_AGUA
+    JB POSICION_OK_AGUA_1
     CMP SI, 450
-    JA POSICION_OK_AGUA
+    JA POSICION_OK_AGUA_1
     JMP SIGUIENTE_GRUPO_AGUA
     
+POSICION_OK_AGUA_1:
+    ; Verificar que no esté en zona de portal
+    CALL VERIFICAR_ZONA_PORTAL
+    CMP AL, 1
+    JE SIGUIENTE_GRUPO_AGUA
+    
 POSICION_OK_AGUA:
-    ; Colocar grupo pequeño de agua (2x2 máximo)
+    ; Colocar grupo pequeño de agua
     MOV CX, 2
     
 COLOCAR_FILA_AGUA:
@@ -295,6 +461,9 @@ SIGUIENTE_AGUA:
     POP CX
     LOOP COLOCAR_FILA_AGUA
     
+    JMP SHORT VOLVER_GRUPO_AGUA
+    
+VOLVER_GRUPO_AGUA:
     JMP SIGUIENTE_GRUPO_AGUA
     
 FIN_AGUA:
@@ -331,7 +500,7 @@ SIGUIENTE_HIERBA:
     
     CALL NUMERO_ALEATORIO
     MOV DX, 0
-    MOV BX, 19
+    MOV BX, 19          ; Alto útil (21-2)
     DIV BX
     ADD DX, 1
     MOV BX, DX
@@ -343,7 +512,12 @@ SIGUIENTE_HIERBA:
     ADD AX, DX
     MOV SI, AX
     
-    ; Colocar solo si es tierra (no sobrescribir obstáculos)
+    ; Verificar que no esté en zona de portal
+    CALL VERIFICAR_ZONA_PORTAL
+    CMP AL, 1
+    JE SIGUIENTE_HIERBA
+    
+    ; Colocar solo si es tierra
     CMP SI, 840
     JAE SIGUIENTE_HIERBA
     CMP BYTE PTR MAPA_DATOS[SI], 0
